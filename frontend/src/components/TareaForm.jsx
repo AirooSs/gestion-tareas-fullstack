@@ -12,7 +12,7 @@ function TareaForm({ onCrear }) {
     };
 
     return (
-        <div className="card mb-4">
+       <div className="card card-nueva-tarea mb-4">
             <div className="card-body">
                 <h5 className="card-title mb-3">Nueva tarea</h5>
                 <form onSubmit={manejarSubmit}>

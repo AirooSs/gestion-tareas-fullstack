@@ -3,6 +3,7 @@ import './App.css';
 import SelectorProyecto from './components/SelectorProyecto';
 import TareaForm from './components/TareaForm';
 import TareaLista from './components/TareaLista';
+import ProyectoForm from './components/ProyectoForm';
 
 const USER_ID = '5c3a541c-5a22-45e8-92d7-600f3adfcbfb';
 
@@ -58,6 +59,23 @@ function App() {
       .then(() => cargarTareas(proyectoSeleccionado))
       .catch(error => console.error('Error al crear tarea:', error));
   };
+  const crearProyecto = (name, description) => {
+    fetch('http://localhost:8080/api/proyectos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name,
+        description: description,
+        ownerId: USER_ID
+      })
+    })
+      .then(response => response.json())
+      .then((nuevoProyecto) => {
+        setProyectos(prev => [...prev, nuevoProyecto]);
+        setProyectoSeleccionado(nuevoProyecto.id);
+      })
+      .catch(error => console.error('Error al crear proyecto:', error));
+  };
 
   const cambiarEstado = (id, nuevoEstado) => {
     fetch(`http://localhost:8080/api/tareas/${id}/estado`, {
@@ -89,6 +107,7 @@ function App() {
         proyectoSeleccionado={proyectoSeleccionado}
         onCambiar={setProyectoSeleccionado}
       />
+      <ProyectoForm onCrear={crearProyecto} />
 
       <TareaForm onCrear={crearTarea} />
 

@@ -2,11 +2,16 @@ import TareaItem from './TareaItem';
 
 function TareaLista({ tareas, onCambiarEstado }) {
     if (tareas.length === 0) {
-        return <p className="text-muted text-center mt-4">No hay tareas en este proyecto todavía.</p>;
+        return (
+            <div className="estado-vacio">
+                <p className="estado-vacio-titulo">No hay tareas todavía</p>
+                <p className="estado-vacio-texto">Crea la primera tarea de este proyecto usando el formulario de arriba</p>
+            </div>
+        );
     }
 
     return (
-        <div className="row g-3">
+        <div className="tarea-lista">
             {tareas.map(tarea => (
                 <TareaItem key={tarea.id} tarea={tarea} onCambiarEstado={onCambiarEstado} />
             ))}
