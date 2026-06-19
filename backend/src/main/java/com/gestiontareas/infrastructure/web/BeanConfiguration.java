@@ -4,6 +4,8 @@ import com.gestiontareas.application.service.ActualizarEstadoTareaService;
 import com.gestiontareas.application.service.CrearProyectoService;
 import com.gestiontareas.application.service.CrearTareaService;
 import com.gestiontareas.application.service.CrearUsuarioService;
+import com.gestiontareas.application.service.EditarTareaService;
+import com.gestiontareas.application.service.EliminarTareaService;
 import com.gestiontareas.application.service.ListarProyectosPorUsuarioService;
 import com.gestiontareas.application.service.ListarTareasPorProyectoService;
 import com.gestiontareas.application.service.ObtenerTareaService;
@@ -12,6 +14,8 @@ import com.gestiontareas.domain.port.in.ActualizarEstadoTareaUseCase;
 import com.gestiontareas.domain.port.in.CrearProyectoUseCase;
 import com.gestiontareas.domain.port.in.CrearTareaUseCase;
 import com.gestiontareas.domain.port.in.CrearUsuarioUseCase;
+import com.gestiontareas.domain.port.in.EditarTareaUseCase;
+import com.gestiontareas.domain.port.in.EliminarTareaUseCase;
 import com.gestiontareas.domain.port.in.ListarProyectosPorUsuarioUseCase;
 import com.gestiontareas.domain.port.in.ListarTareasPorProyectoUseCase;
 import com.gestiontareas.domain.port.in.ObtenerTareaUseCase;
@@ -21,10 +25,13 @@ import com.gestiontareas.domain.port.out.TaskRepository;
 import com.gestiontareas.domain.port.out.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import com.gestiontareas.application.service.EliminarProyectoService;
+import com.gestiontareas.domain.port.in.EliminarProyectoUseCase;
 
 /**
  * Configuración de Spring — conecta los casos de uso con sus implementaciones.
  */
+
 @Configuration
 public class BeanConfiguration {
 
@@ -49,6 +56,16 @@ public class BeanConfiguration {
     }
 
     @Bean
+    public EditarTareaUseCase editarTareaUseCase(TaskRepository taskRepository) {
+        return new EditarTareaService(taskRepository);
+    }
+
+    @Bean
+    public EliminarTareaUseCase eliminarTareaUseCase(TaskRepository taskRepository) {
+        return new EliminarTareaService(taskRepository);
+    }
+
+    @Bean
     public CrearProyectoUseCase crearProyectoUseCase(ProjectRepository projectRepository) {
         return new CrearProyectoService(projectRepository);
     }
@@ -66,5 +83,11 @@ public class BeanConfiguration {
     @Bean
     public ObtenerUsuarioUseCase obtenerUsuarioUseCase(UserRepository userRepository) {
         return new ObtenerUsuarioService(userRepository);
+    }
+
+    @Bean
+    public EliminarProyectoUseCase eliminarProyectoUseCase(ProjectRepository projectRepository,
+            TaskRepository taskRepository) {
+        return new EliminarProyectoService(projectRepository, taskRepository);
     }
 }

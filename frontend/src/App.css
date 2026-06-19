@@ -168,3 +168,98 @@ h1 {
   color: var(--ink-soft);
   margin: 0;
 }
+
+.tarea-card-acciones {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.tarea-card-editando {
+  border-color: var(--accent);
+}
+
+.proyecto-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.proyecto-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 4px 6px 4px 14px;
+  font-size: 13px;
+}
+
+.proyecto-chip-activo {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.proyecto-chip-nombre {
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.proyecto-chip-activo .proyecto-chip-nombre {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.proyecto-chip-eliminar {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.proyecto-chip-eliminar:hover {
+  background: var(--cancelado-bg);
+  color: var(--cancelado);
+}
+
+.barra-busqueda {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.barra-busqueda input {
+  padding-right: 36px;
+}
+
+.barra-busqueda-limpiar {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.barra-busqueda-limpiar:hover {
+  background: var(--border);
+}

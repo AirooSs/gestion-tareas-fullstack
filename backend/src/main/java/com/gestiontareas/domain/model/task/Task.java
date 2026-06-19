@@ -38,6 +38,12 @@ public class Task {
         this.assignedTo = usuarioId;
     }
 
+    /** Edita el título y la descripción de la tarea */
+    public void editar(String nuevoTitulo, String nuevaDescripcion) {
+        this.title = nuevoTitulo;
+        this.description = nuevaDescripcion;
+    }
+
     public TaskId getId() { return id; }
     public String getTitle() { return title; }
     public String getDescription() { return description; }

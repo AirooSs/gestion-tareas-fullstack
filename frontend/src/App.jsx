@@ -4,6 +4,8 @@ import SelectorProyecto from './components/SelectorProyecto';
 import TareaForm from './components/TareaForm';
 import TareaLista from './components/TareaLista';
 import ProyectoForm from './components/ProyectoForm';
+import ProyectoLista from './components/ProyectoLista';
+import BarraBusqueda from './components/BarraBusqueda';
 
 const USER_ID = '5c3a541c-5a22-45e8-92d7-600f3adfcbfb';
 
@@ -12,6 +14,8 @@ function App() {
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState('');
   const [tareas, setTareas] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [busquedaProyecto, setBusquedaProyecto] = useState('');
+  const [busquedaTarea, setBusquedaTarea] = useState('');
 
   const cargarProyectos = () => {
     fetch(`http://localhost:8080/api/proyectos/usuario/${USER_ID}`)
@@ -59,6 +63,7 @@ function App() {
       .then(() => cargarTareas(proyectoSeleccionado))
       .catch(error => console.error('Error al crear tarea:', error));
   };
+
   const crearProyecto = (name, description) => {
     fetch('http://localhost:8080/api/proyectos', {
       method: 'POST',
@@ -88,6 +93,51 @@ function App() {
       .catch(error => console.error('Error al cambiar estado:', error));
   };
 
+  const editarTarea = (id, nuevoTitulo, nuevaDescripcion) => {
+    fetch(`http://localhost:8080/api/tareas/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        titulo: nuevoTitulo,
+        descripcion: nuevaDescripcion
+      })
+    })
+      .then(response => response.json())
+      .then(() => cargarTareas(proyectoSeleccionado))
+      .catch(error => console.error('Error al editar tarea:', error));
+  };
+
+  const eliminarTarea = (id) => {
+    fetch(`http://localhost:8080/api/tareas/${id}`, {
+      method: 'DELETE'
+    })
+      .then(() => cargarTareas(proyectoSeleccionado))
+      .catch(error => console.error('Error al eliminar tarea:', error));
+  };
+
+  const eliminarProyecto = (id) => {
+    fetch(`http://localhost:8080/api/proyectos/${id}`, {
+      method: 'DELETE'
+    })
+      .then(() => {
+        const proyectosActualizados = proyectos.filter(p => p.id !== id);
+        setProyectos(proyectosActualizados);
+
+        if (proyectoSeleccionado === id) {
+          setProyectoSeleccionado(proyectosActualizados.length > 0 ? proyectosActualizados[0].id : '');
+        }
+      })
+      .catch(error => console.error('Error al eliminar proyecto:', error));
+  };
+
+  const proyectosFiltrados = proyectos.filter(p =>
+    p.name.toLowerCase().includes(busquedaProyecto.toLowerCase())
+  );
+
+  const tareasFiltradas = tareas.filter(t =>
+    t.titulo.toLowerCase().includes(busquedaTarea.toLowerCase())
+  );
+
   if (cargando) {
     return (
       <div className="d-flex justify-content-center mt-5">
@@ -107,11 +157,43 @@ function App() {
         proyectoSeleccionado={proyectoSeleccionado}
         onCambiar={setProyectoSeleccionado}
       />
+
+      <BarraBusqueda
+        valor={busquedaProyecto}
+        onCambiar={setBusquedaProyecto}
+        placeholder="Buscar proyecto..."
+      />
+
+      <ProyectoLista
+        proyectos={proyectosFiltrados}
+        proyectoSeleccionado={proyectoSeleccionado}
+        onSeleccionar={setProyectoSeleccionado}
+        onEliminar={eliminarProyecto}
+      />
+
       <ProyectoForm onCrear={crearProyecto} />
 
-      <TareaForm onCrear={crearTarea} />
-
-      <TareaLista tareas={tareas} onCambiarEstado={cambiarEstado} />
+      {proyectoSeleccionado ? (
+        <>
+          <TareaForm onCrear={crearTarea} />
+          <BarraBusqueda
+            valor={busquedaTarea}
+            onCambiar={setBusquedaTarea}
+            placeholder="Buscar tarea..."
+          />
+          <TareaLista
+            tareas={tareasFiltradas}
+            onCambiarEstado={cambiarEstado}
+            onEditar={editarTarea}
+            onEliminar={eliminarTarea}
+          />
+        </>
+      ) : (
+        <div className="estado-vacio">
+          <p className="estado-vacio-titulo">No tienes ningún proyecto todavía</p>
+          <p className="estado-vacio-texto">Crea tu primer proyecto arriba para empezar a añadir tareas</p>
+        </div>
+      )}
     </div>
   );
 }

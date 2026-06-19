@@ -1,7 +1,9 @@
 package com.gestiontareas.infrastructure.web;
 
+import com.gestiontareas.domain.model.project.ProjectId;
 import com.gestiontareas.domain.model.user.UserId;
 import com.gestiontareas.domain.port.in.CrearProyectoUseCase;
+import com.gestiontareas.domain.port.in.EliminarProyectoUseCase;
 import com.gestiontareas.domain.port.in.ListarProyectosPorUsuarioUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,11 +17,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Adaptador de entrada — expone los casos de uso de Project como endpoints REST.
+ * Adaptador de entrada — expone los casos de uso de Project como endpoints
+ * REST.
  * El controller solo llama a los puertos de entrada (interfaces).
  * Nunca llama directamente a los servicios.
  */
-
 @RestController
 @RequestMapping("/api/proyectos")
 @Tag(name = "Proyectos", description = "Operaciones sobre proyectos")
@@ -27,13 +29,15 @@ public class ProjectController {
 
     private final CrearProyectoUseCase crearProyectoUseCase;
     private final ListarProyectosPorUsuarioUseCase listarProyectosPorUsuarioUseCase;
+    private final EliminarProyectoUseCase eliminarProyectoUseCase;
 
     public ProjectController(
-        CrearProyectoUseCase crearProyectoUseCase,
-        ListarProyectosPorUsuarioUseCase listarProyectosPorUsuarioUseCase
-    ) {
+            CrearProyectoUseCase crearProyectoUseCase,
+            ListarProyectosPorUsuarioUseCase listarProyectosPorUsuarioUseCase,
+            EliminarProyectoUseCase eliminarProyectoUseCase) {
         this.crearProyectoUseCase = crearProyectoUseCase;
         this.listarProyectosPorUsuarioUseCase = listarProyectosPorUsuarioUseCase;
+        this.eliminarProyectoUseCase = eliminarProyectoUseCase;
     }
 
     /** Crea un nuevo proyecto asociado a un usuario */
@@ -41,10 +45,9 @@ public class ProjectController {
     @PostMapping
     public ResponseEntity<ProyectoResponse> crearProyecto(@Valid @RequestBody CrearProyectoRequest request) {
         ProyectoResponse response = ProyectoResponse.from(crearProyectoUseCase.ejecutar(
-            request.name(),
-            request.description(),
-            UserId.of(request.ownerId())
-        ));
+                request.name(),
+                request.description(),
+                UserId.of(request.ownerId())));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -53,9 +56,17 @@ public class ProjectController {
     @GetMapping("/usuario/{ownerId}")
     public ResponseEntity<List<ProyectoResponse>> listarPorUsuario(@PathVariable UUID ownerId) {
         List<ProyectoResponse> response = listarProyectosPorUsuarioUseCase.ejecutar(UserId.of(ownerId))
-            .stream()
-            .map(ProyectoResponse::from)
-            .collect(Collectors.toList());
+                .stream()
+                .map(ProyectoResponse::from)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(response);
+    }
+
+    /** Elimina un proyecto junto con todas sus tareas asociadas */
+    @Operation(summary = "Eliminar proyecto", description = "Elimina un proyecto y todas sus tareas asociadas (cascada)")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarProyecto(@PathVariable UUID id) {
+        eliminarProyectoUseCase.ejecutar(ProjectId.of(id));
+        return ResponseEntity.noContent().build();
     }
 }

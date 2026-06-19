@@ -1,6 +1,6 @@
 import TareaItem from './TareaItem';
 
-function TareaLista({ tareas, onCambiarEstado }) {
+function TareaLista({ tareas, onCambiarEstado, onEditar, onEliminar }) {
     if (tareas.length === 0) {
         return (
             <div className="estado-vacio">
@@ -13,7 +13,13 @@ function TareaLista({ tareas, onCambiarEstado }) {
     return (
         <div className="tarea-lista">
             {tareas.map(tarea => (
-                <TareaItem key={tarea.id} tarea={tarea} onCambiarEstado={onCambiarEstado} />
+                <TareaItem
+                    key={tarea.id}
+                    tarea={tarea}
+                    onCambiarEstado={onCambiarEstado}
+                    onEditar={onEditar}
+                    onEliminar={onEliminar}
+                />
             ))}
         </div>
     );
