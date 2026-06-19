@@ -16,6 +16,7 @@ function App() {
   const [cargando, setCargando] = useState(true);
   const [busquedaProyecto, setBusquedaProyecto] = useState('');
   const [busquedaTarea, setBusquedaTarea] = useState('');
+  const [mostrarFormTarea, setMostrarFormTarea] = useState(false);
 
   const cargarProyectos = () => {
     fetch(`http://localhost:8080/api/proyectos/usuario/${USER_ID}`)
@@ -60,7 +61,10 @@ function App() {
       })
     })
       .then(response => response.json())
-      .then(() => cargarTareas(proyectoSeleccionado))
+      .then(() => {
+        cargarTareas(proyectoSeleccionado);
+        setMostrarFormTarea(false);
+      })
       .catch(error => console.error('Error al crear tarea:', error));
   };
 
@@ -138,62 +142,133 @@ function App() {
     t.titulo.toLowerCase().includes(busquedaTarea.toLowerCase())
   );
 
+  const proyectoActual = proyectos.find(p => p.id === proyectoSeleccionado);
+
+  const totalTareas = tareas.length;
+  const tareasPendientes = tareas.filter(t => t.status === 'PENDIENTE').length;
+  const tareasEnProgreso = tareas.filter(t => t.status === 'EN_PROGRESO').length;
+  const tareasHechas = tareas.filter(t => t.status === 'HECHO').length;
+
   if (cargando) {
     return (
-      <div className="d-flex justify-content-center mt-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
+      <div className="loading-shell">
+        <div className="spinner"></div>
       </div>
     );
   }
-
   return (
-    <div className="container py-4">
-      <h1 className="mb-4">Gestión de Tareas</h1>
-
-      <SelectorProyecto
-        proyectos={proyectos}
-        proyectoSeleccionado={proyectoSeleccionado}
-        onCambiar={setProyectoSeleccionado}
-      />
-
-      <BarraBusqueda
-        valor={busquedaProyecto}
-        onCambiar={setBusquedaProyecto}
-        placeholder="Buscar proyecto..."
-      />
-
-      <ProyectoLista
-        proyectos={proyectosFiltrados}
-        proyectoSeleccionado={proyectoSeleccionado}
-        onSeleccionar={setProyectoSeleccionado}
-        onEliminar={eliminarProyecto}
-      />
-
-      <ProyectoForm onCrear={crearProyecto} />
-
-      {proyectoSeleccionado ? (
-        <>
-          <TareaForm onCrear={crearTarea} />
-          <BarraBusqueda
-            valor={busquedaTarea}
-            onCambiar={setBusquedaTarea}
-            placeholder="Buscar tarea..."
-          />
-          <TareaLista
-            tareas={tareasFiltradas}
-            onCambiarEstado={cambiarEstado}
-            onEditar={editarTarea}
-            onEliminar={eliminarTarea}
-          />
-        </>
-      ) : (
-        <div className="estado-vacio">
-          <p className="estado-vacio-titulo">No tienes ningún proyecto todavía</p>
-          <p className="estado-vacio-texto">Crea tu primer proyecto arriba para empezar a añadir tareas</p>
+    <div className="app-layout">
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <h1>Gestión de Tareas</h1>
+          <p>Mente productiva</p>
         </div>
-      )}
+
+        <nav>
+          <a className="sidebar-link activo" href="#">Todas las tareas</a>
+          <a className="sidebar-link" href="#">Mis proyectos</a>
+        </nav>
+
+        <div className="sidebar-spacer"></div>
+
+        <div className="sidebar-user">
+          <div className="sidebar-user-avatar">FS</div>
+          <div>
+            <p>Fran Soria</p>
+            <span>Cuenta personal</span>
+          </div>
+        </div>
+      </aside>
+
+      <div className="main-area">
+        <header className="topbar">
+          <button className="topbar-selector">
+            {proyectoActual ? proyectoActual.name : 'Selecciona un proyecto'}
+          </button>
+        </header>
+
+        <div className="contenido">
+          <div className="stats-grid">
+            <div className="stat-card">
+              <p className="stat-card-label">Total tareas</p>
+              <h3 className="stat-card-valor">{totalTareas}</h3>
+              <p className="stat-card-sub activo">En este proyecto</p>
+            </div>
+            <div className="stat-card">
+              <p className="stat-card-label">Pendientes</p>
+              <h3 className="stat-card-valor">{tareasPendientes}</h3>
+              <p className="stat-card-sub">Por empezar</p>
+            </div>
+            <div className="stat-card">
+              <p className="stat-card-label">En progreso</p>
+              <h3 className="stat-card-valor">{tareasEnProgreso}</h3>
+              <p className="stat-card-sub">En curso</p>
+            </div>
+            <div className="stat-card">
+              <p className="stat-card-label">Completadas</p>
+              <h3 className="stat-card-valor">{tareasHechas}</h3>
+              <p className="stat-card-sub">Finalizadas</p>
+            </div>
+          </div>
+
+          <BarraBusqueda
+            valor={busquedaProyecto}
+            onCambiar={setBusquedaProyecto}
+            placeholder="Buscar proyecto..."
+          />
+
+          <ProyectoLista
+            proyectos={proyectosFiltrados}
+            proyectoSeleccionado={proyectoSeleccionado}
+            onSeleccionar={setProyectoSeleccionado}
+            onEliminar={eliminarProyecto}
+          />
+
+          <ProyectoForm onCrear={crearProyecto} />
+
+          {proyectoSeleccionado ? (
+            <>
+              <div className="seccion-cabecera">
+                <div>
+                  <h2>Tareas activas</h2>
+                  <p>Gestiona tus prioridades del proyecto</p>
+                </div>
+              </div>
+
+              <BarraBusqueda
+                valor={busquedaTarea}
+                onCambiar={setBusquedaTarea}
+                placeholder="Buscar tarea..."
+              />
+
+              <TareaLista
+                tareas={tareasFiltradas}
+                onCambiarEstado={cambiarEstado}
+                onEditar={editarTarea}
+                onEliminar={eliminarTarea}
+              />
+
+              {mostrarFormTarea && (
+                <div className="tarea-form-overlay" onClick={() => setMostrarFormTarea(false)}>
+                  <div className="tarea-form-modal" onClick={(e) => e.stopPropagation()}>
+                    <h2>Nueva tarea</h2>
+                    <TareaForm onCrear={crearTarea} />
+                  </div>
+                </div>
+              )}
+
+              <button className="fab" onClick={() => setMostrarFormTarea(true)}>
+                + Nueva tarea
+              </button>
+            </>
+          ) : (
+            <div className="estado-vacio">
+              <p className="estado-vacio-titulo">No tienes ningún proyecto todavía</p>
+              <p className="estado-vacio-texto">Crea tu primer proyecto arriba para empezar a añadir tareas</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

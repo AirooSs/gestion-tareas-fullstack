@@ -12,39 +12,26 @@ function TareaForm({ onCrear }) {
     };
 
     return (
-       <div className="card card-nueva-tarea mb-4">
-            <div className="card-body">
-                <h5 className="card-title mb-3">Nueva tarea</h5>
-                <form onSubmit={manejarSubmit}>
-                    <div className="row g-2">
-                        <div className="col-12 col-md-4">
-                            <input
-                                type="text"
-                                className="form-control"
-                                placeholder="Título de la tarea"
-                                value={titulo}
-                                onChange={(e) => setTitulo(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="col-12 col-md-5">
-                            <input
-                                type="text"
-                                className="form-control"
-                                placeholder="Descripción"
-                                value={descripcion}
-                                onChange={(e) => setDescripcion(e.target.value)}
-                            />
-                        </div>
-                        <div className="col-12 col-md-3">
-                            <button type="submit" className="btn btn-primary w-100">
-                                Crear tarea
-                            </button>
-                        </div>
-                    </div>
-                </form>
+        <form onSubmit={manejarSubmit}>
+            <input
+                type="text"
+                placeholder="Título de la tarea"
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                required
+            />
+            <input
+                type="text"
+                placeholder="Descripción"
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+            />
+            <div className="tarea-form-modal-acciones">
+                <button type="submit" className="fab" style={{ position: 'static' }}>
+                    Crear tarea
+                </button>
             </div>
-        </div>
+        </form>
     );
 }
 
