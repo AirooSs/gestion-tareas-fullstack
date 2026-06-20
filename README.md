@@ -39,7 +39,7 @@ El proyecto implementa una separación clara entre dominio, aplicación e infrae
 
 ![Creación de proyectos](docs/tasks.png)
 
-### Creación de tareas
+### Creación y edición de tareas
 
 ![Modal de creación de tareas](docs/modal.png)
 
