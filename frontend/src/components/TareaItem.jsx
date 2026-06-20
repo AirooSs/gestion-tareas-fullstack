@@ -4,6 +4,10 @@ function claseEstado(estado) {
     return `badge-estado badge-${estado.toLowerCase()}`;
 }
 
+function formatearEstado(estado) {
+    return estado.replace('_', ' ');
+}
+
 function TareaItem({ tarea, onCambiarEstado, onEditar, onEliminar }) {
     const [editando, setEditando] = useState(false);
     const [titulo, setTitulo] = useState(tarea.titulo);
@@ -58,7 +62,7 @@ function TareaItem({ tarea, onCambiarEstado, onEditar, onEliminar }) {
             <div className="tarea-card-cabecera">
                 <h3>{tarea.titulo}</h3>
                 <span className={claseEstado(tarea.status)}>
-                    {tarea.status}
+                    {formatearEstado(tarea.status)}
                 </span>
             </div>
             <p>{tarea.descripcion}</p>

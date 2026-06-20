@@ -180,6 +180,26 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
+.stat-card-total {
+  background: var(--accent-soft);
+  border-color: rgba(0, 122, 255, 0.15);
+}
+
+.stat-card-pendientes {
+  background: var(--pendiente-bg);
+  border-color: rgba(134, 134, 139, 0.15);
+}
+
+.stat-card-progreso {
+  background: var(--progreso-bg);
+  border-color: rgba(184, 134, 47, 0.15);
+}
+
+.stat-card-completadas {
+  background: var(--hecho-bg);
+  border-color: rgba(29, 138, 76, 0.15);
+}
+
 .stat-card-label {
   font-size: 12px;
   font-weight: 600;
@@ -579,4 +599,176 @@ button.btn {
 
 .tarea-card-acciones {
   margin-top: 6px;
+}
+
+.selector-dropdown {
+  position: relative;
+  margin-bottom: 20px;
+  max-width: 320px;
+}
+
+.selector-dropdown-boton {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.selector-dropdown-boton:hover {
+  border-color: var(--accent);
+}
+
+.selector-dropdown-flecha {
+  font-size: 10px;
+  color: var(--ink-soft);
+}
+
+.selector-dropdown-lista {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  z-index: 20;
+  overflow: hidden;
+}
+
+.selector-dropdown-vacio {
+  padding: 14px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.selector-dropdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--bg);
+}
+
+.selector-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.selector-dropdown-item span:not(.selector-dropdown-eliminar) {
+  cursor: pointer;
+  flex: 1;
+}
+
+.selector-dropdown-item span.activo {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.selector-dropdown-eliminar {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.selector-dropdown-eliminar:hover {
+  background: var(--cancelado-bg);
+  color: var(--cancelado);
+}
+
+.selector-dropdown-confirmacion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  font-size: 13px;
+}
+
+.selector-dropdown-confirmacion-botones {
+  display: flex;
+  gap: 6px;
+}
+
+.selector-dropdown-confirmacion-botones button {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.selector-dropdown-confirmacion-botones button:first-child {
+  color: var(--cancelado);
+  border-color: var(--cancelado);
+}
+
+.btn-link {
+  margin-bottom: 28px;
+}
+
+.proyecto-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 28px;
+  max-width: 480px;
+}
+
+.proyecto-form h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 14px;
+}
+
+.proyecto-form input {
+  width: 100%;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.proyecto-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.proyecto-form-acciones {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.proyecto-form-crear {
+  background: var(--accent);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.proyecto-form-crear:hover {
+  opacity: 0.9;
 }

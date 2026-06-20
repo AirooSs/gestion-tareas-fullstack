@@ -4,7 +4,6 @@ import SelectorProyecto from './components/SelectorProyecto';
 import TareaForm from './components/TareaForm';
 import TareaLista from './components/TareaLista';
 import ProyectoForm from './components/ProyectoForm';
-import ProyectoLista from './components/ProyectoLista';
 import BarraBusqueda from './components/BarraBusqueda';
 
 const USER_ID = '5c3a541c-5a22-45e8-92d7-600f3adfcbfb';
@@ -14,7 +13,6 @@ function App() {
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState('');
   const [tareas, setTareas] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [busquedaProyecto, setBusquedaProyecto] = useState('');
   const [busquedaTarea, setBusquedaTarea] = useState('');
   const [mostrarFormTarea, setMostrarFormTarea] = useState(false);
 
@@ -134,14 +132,9 @@ function App() {
       .catch(error => console.error('Error al eliminar proyecto:', error));
   };
 
-  const proyectosFiltrados = proyectos.filter(p =>
-    p.name.toLowerCase().includes(busquedaProyecto.toLowerCase())
-  );
-
-  const tareasFiltradas = tareas.filter(t =>
-    t.titulo.toLowerCase().includes(busquedaTarea.toLowerCase())
-  );
-
+  const tareasFiltradas = tareas
+    .filter(t => t.titulo.toLowerCase().includes(busquedaTarea.toLowerCase()))
+    .sort((a, b) => a.titulo.localeCompare(b.titulo));
   const proyectoActual = proyectos.find(p => p.id === proyectoSeleccionado);
 
   const totalTareas = tareas.length;
@@ -156,6 +149,7 @@ function App() {
       </div>
     );
   }
+
   return (
     <div className="app-layout">
       <aside className="sidebar">
@@ -166,18 +160,9 @@ function App() {
 
         <nav>
           <a className="sidebar-link activo" href="#">Todas las tareas</a>
-          <a className="sidebar-link" href="#">Mis proyectos</a>
         </nav>
 
         <div className="sidebar-spacer"></div>
-
-        <div className="sidebar-user">
-          <div className="sidebar-user-avatar">FS</div>
-          <div>
-            <p>Fran Soria</p>
-            <span>Cuenta personal</span>
-          </div>
-        </div>
       </aside>
 
       <div className="main-area">
@@ -189,38 +174,32 @@ function App() {
 
         <div className="contenido">
           <div className="stats-grid">
-            <div className="stat-card">
+            <div className="stat-card stat-card-total">
               <p className="stat-card-label">Total tareas</p>
               <h3 className="stat-card-valor">{totalTareas}</h3>
               <p className="stat-card-sub activo">En este proyecto</p>
             </div>
-            <div className="stat-card">
+            <div className="stat-card stat-card-pendientes">
               <p className="stat-card-label">Pendientes</p>
               <h3 className="stat-card-valor">{tareasPendientes}</h3>
               <p className="stat-card-sub">Por empezar</p>
             </div>
-            <div className="stat-card">
+            <div className="stat-card stat-card-progreso">
               <p className="stat-card-label">En progreso</p>
               <h3 className="stat-card-valor">{tareasEnProgreso}</h3>
               <p className="stat-card-sub">En curso</p>
             </div>
-            <div className="stat-card">
+            <div className="stat-card stat-card-completadas">
               <p className="stat-card-label">Completadas</p>
               <h3 className="stat-card-valor">{tareasHechas}</h3>
               <p className="stat-card-sub">Finalizadas</p>
             </div>
           </div>
 
-          <BarraBusqueda
-            valor={busquedaProyecto}
-            onCambiar={setBusquedaProyecto}
-            placeholder="Buscar proyecto..."
-          />
-
-          <ProyectoLista
-            proyectos={proyectosFiltrados}
+          <SelectorProyecto
+            proyectos={proyectos}
             proyectoSeleccionado={proyectoSeleccionado}
-            onSeleccionar={setProyectoSeleccionado}
+            onCambiar={setProyectoSeleccionado}
             onEliminar={eliminarProyecto}
           />
 

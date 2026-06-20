@@ -23,7 +23,7 @@ public class ActualizarEstadoTareaService implements ActualizarEstadoTareaUseCas
 
 	@Override
 	public Task ejecutar(TaskId id, TaskStatus nuevoEstado) {
-		// TODO Auto-generated method stub
+		
 		Task tarea = taskRepository.findById(id)
 				.orElseThrow(() ->
 				new RuntimeException("Tarea no encontrada con id: " + id.value()));
