@@ -6,6 +6,8 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue)
 ![Architecture](https://img.shields.io/badge/Architecture-Hexagonal-purple)
 
+🚀 **Proyecto Full Stack desarrollado con Spring Boot y React, aplicando Arquitectura Hexagonal, DDD y testing unitario.**
+
 Aplicación Full Stack para la gestión de proyectos y tareas desarrollada con **Spring Boot**, **Arquitectura Hexagonal**, **Domain Driven Design (DDD)** y **React**.
 
 El proyecto implementa una separación clara entre dominio, aplicación e infraestructura en el backend, junto con una interfaz moderna desarrollada en React que consume una API REST. Su objetivo es demostrar buenas prácticas de desarrollo de software, diseño de arquitecturas desacopladas y construcción de aplicaciones web modernas.
@@ -14,16 +16,16 @@ El proyecto implementa una separación clara entre dominio, aplicación e infrae
 
 ## 📑 Índice
 
-* Capturas
-* Estructura del repositorio
-* Arquitectura
-* Características técnicas
-* Backend
-* Frontend
-* Instalación y ejecución
-* Retos y aprendizajes
-* Mejoras futuras
-* Autor
+- [📸 Capturas](#-capturas)
+- [📁 Estructura del repositorio](#-estructura-del-repositorio)
+- [🏛️ Arquitectura](#️-arquitectura)
+- [📊 Características técnicas](#-características-técnicas)
+- [🏗️ Backend](#️-backend)
+- [💻 Frontend](#-frontend)
+- [🔗 Proyecto relacionado](#-proyecto-relacionado)
+- [🚀 Retos y aprendizajes](#-retos-y-aprendizajes)
+- [🔮 Mejoras futuras](#-mejoras-futuras)
+- [👨‍💻 Autor](#-autor)
 
 ---
 
@@ -33,13 +35,13 @@ El proyecto implementa una separación clara entre dominio, aplicación e infrae
 
 ![Dashboard](docs/dashboard.png)
 
-### Gestión de tareas
+### Creación de proyectos
 
-![Gestión de tareas](docs/tasks.png)
+![Creación de proyectos](docs/tasks.png)
 
-### Creación y edición de tareas
+### Creación de tareas
 
-![Modal tareas](docs/modal.png)
+![Modal de creación de tareas](docs/modal.png)
 
 ---
 
@@ -58,25 +60,25 @@ gestion-tareas-fullstack/
 El backend sigue una **Arquitectura Hexagonal (Ports & Adapters)** junto con principios de **Domain Driven Design (DDD)**.
 
 ```text
-React Frontend
-       │
-       ▼
- REST Controllers
-       │
-       ▼
-   Casos de Uso
-       │
-       ▼
-     Dominio
-       │
-       ▼
- Puertos de Salida
-       │
-       ▼
- Adaptadores JPA
-       │
-       ▼
-   PostgreSQL
+          React Frontend
+                 │
+                 ▼
+        REST Controllers
+                 │
+                 ▼
+        Puertos de Entrada
+                 │
+                 ▼
+              Dominio
+                 │
+                 ▼
+        Puertos de Salida
+                 │
+                 ▼
+       Adaptadores JPA
+                 │
+                 ▼
+           PostgreSQL
 ```
 
 El dominio permanece completamente aislado de Spring, JPA y cualquier dependencia externa, permitiendo una mayor mantenibilidad, facilidad de testeo y desacoplamiento tecnológico.
@@ -87,9 +89,9 @@ El dominio permanece completamente aislado de Spring, JPA y cualquier dependenci
 
 * Arquitectura Hexagonal (Ports & Adapters)
 * Domain Driven Design (DDD)
+* Tests unitarios de dominio y casos de uso
 * API REST documentada con Swagger/OpenAPI
 * Persistencia de datos con PostgreSQL
-* Tests unitarios con JUnit 5 y Mockito
 * Validación de datos con Jakarta Validation
 * Manejo global de excepciones
 * Frontend React consumiendo API REST
@@ -224,6 +226,14 @@ con CORS configurado para dicho origen.
 
 ---
 
+## 🔗 Proyecto relacionado
+
+Este proyecto amplía la API desarrollada previamente en:
+
+- **Gestión de tareas Hexagonal (Backend)**: https://github.com/AirooSs/Gestion-tareas-hexagonal
+
+---
+
 ## 🚀 Retos y aprendizajes
 
 Durante el desarrollo de este proyecto trabajé conceptos habituales en aplicaciones empresariales reales:
@@ -257,7 +267,7 @@ Durante el desarrollo de este proyecto trabajé conceptos habituales en aplicaci
 
 **Francisco José Soria Navarrete**
 
-Desarrollador Full Stack especializado en Java y desarrollo web.
+Desarrollador Full Stack Junior | Java | Spring Boot | React
 
 * GitHub: https://github.com/AirooSs
 * LinkedIn: https://www.linkedin.com/in/fran-soria-nav/
