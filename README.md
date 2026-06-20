@@ -250,7 +250,7 @@ Durante el desarrollo de este proyecto trabajé conceptos habituales en aplicaci
 
 ---
 
-## 🔮 Mejoras futuras
+## 🔮 Mejoras futuras que se podrían implementar
 
 * Autenticación y autorización mediante JWT.
 * Gestión de roles y permisos.
