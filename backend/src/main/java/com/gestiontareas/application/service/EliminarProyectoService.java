@@ -6,6 +6,7 @@ import com.gestiontareas.domain.model.task.Task;
 import com.gestiontareas.domain.port.in.EliminarProyectoUseCase;
 import com.gestiontareas.domain.port.out.ProjectRepository;
 import com.gestiontareas.domain.port.out.TaskRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -27,6 +28,7 @@ public class EliminarProyectoService implements EliminarProyectoUseCase {
     }
 
     @Override
+    @Transactional
     public void ejecutar(ProjectId id) {
         projectRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Proyecto no encontrado con id: " + id.value()));
