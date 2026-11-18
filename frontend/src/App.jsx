@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
-import SelectorProyecto from './components/SelectorProyecto';
+import Icono from './components/Icono';
+import Dialogo from './components/Dialogo';
 import ConfirmarEliminarProyecto from './components/ConfirmarEliminarProyecto';
 import TareaForm from './components/TareaForm';
 import TareaLista from './components/TareaLista';
@@ -22,6 +23,7 @@ function App() {
   const eliminacionEnCurso = useRef(false);
   const botonEliminarRef = useRef(null);
   const selectorRef = useRef(null);
+  const sidebarRef = useRef(null);
 
   const cargarProyectos = () => {
     fetch(`http://localhost:8080/api/proyectos/usuario/${USER_ID}`)
@@ -135,7 +137,7 @@ function App() {
     setErrorEliminarProyecto('');
     requestAnimationFrame(() => {
       const destino = !eliminado && botonEliminarRef.current?.isConnected
-        ? botonEliminarRef.current : selectorRef.current;
+        ? botonEliminarRef.current : (selectorRef.current || sidebarRef.current);
       destino?.focus();
     });
   };
@@ -177,120 +179,46 @@ function App() {
 
   if (cargando) {
     return (
-      <div className="loading-shell">
-        <div className="spinner"></div>
+      <div className="loading-shell" role="status" aria-label="Cargando proyectos">
+        <div className="spinner" aria-hidden="true"></div>
       </div>
     );
   }
 
   return (
     <div className="app-layout">
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <h1>Gestión de Tareas</h1>
-          <p>Mente productiva</p>
-        </div>
-
-        <nav>
-          <a className="sidebar-link activo" href="#">Todas las tareas</a>
+      <aside ref={sidebarRef} tabIndex="-1" className="sidebar" aria-label="Proyectos">
+        <div className="sidebar-brand"><div className="marca-icono"><Icono nombre="grid" size={19}/></div><div><strong>Gestión de Tareas</strong><span>Tu espacio de trabajo</span></div></div>
+        <div className="sidebar-nav-title">ESPACIO DE TRABAJO</div>
+        <div className="sidebar-overview"><Icono nombre="grid" size={17}/> Mis proyectos</div>
+        <div className="sidebar-section"><span>PROYECTOS</span><span className="proyectos-cuenta">{proyectos.length}</span></div>
+        <nav className="proyectos-nav" aria-label="Lista de proyectos">
+          {proyectos.map(proyecto => <button key={proyecto.id} type="button" className={`proyecto-nav-item${proyecto.id === proyectoSeleccionado ? ' activo' : ''}`} aria-current={proyecto.id === proyectoSeleccionado ? 'page' : undefined} onClick={() => setProyectoSeleccionado(proyecto.id)}><span className="proyecto-nav-icono"><Icono nombre="folder" size={16}/></span><span className="proyecto-nav-nombre">{proyecto.name}</span>{proyecto.id === proyectoSeleccionado && <span className="proyecto-nav-indicador"/>}</button>)}
+          {proyectos.length === 0 && <p className="sidebar-vacio">Aún no hay proyectos.</p>}
         </nav>
-
-        <div className="sidebar-spacer"></div>
+        <ProyectoForm onCrear={crearProyecto}/>
+        <div className="sidebar-footer"><div className="avatar">GT</div><div><strong>Mi espacio</strong><span>Organiza tu día</span></div></div>
       </aside>
-
-      <div className="main-area">
-        <header className="topbar">
-          <button className="topbar-selector">
-            {proyectoActual ? proyectoActual.name : 'Selecciona un proyecto'}
-          </button>
-        </header>
-
+      <main className="main-area">
+        <div className="topbar"><div className="breadcrumb"><Icono nombre="grid" size={15}/><span>Mis proyectos</span><span className="breadcrumb-separador">/</span><strong>{proyectoActual?.name || 'Resumen'}</strong></div><span className="topbar-label">ESPACIO DE TRABAJO</span></div>
         <div className="contenido">
-          <div className="stats-grid">
-            <div className="stat-card stat-card-total">
-              <p className="stat-card-label">Total tareas</p>
-              <h3 className="stat-card-valor">{totalTareas}</h3>
-              <p className="stat-card-sub activo">En este proyecto</p>
+          <div className="pagina-intro"><div><div className="eyebrow"><span className="eyebrow-punto"/> TU ESPACIO DE TRABAJO</div><h1>{proyectoActual?.name || 'Tus proyectos'}</h1><p>{proyectoActual?.description || (proyectoActual ? 'Un espacio para organizar tus ideas y avanzar cada día.' : 'Todo tu trabajo, en un solo lugar.')}</p></div>{proyectoActual && <div className="cabecera-acciones"><button ref={selectorRef} type="button" className="boton-icono peligro proyecto-eliminar" title="Eliminar proyecto" aria-label={`Eliminar proyecto ${proyectoActual.name}`} onClick={e => pedirEliminarProyecto(proyectoActual, e.currentTarget)}><Icono nombre="trash" size={18}/></button><button type="button" className="boton-primario" onClick={() => setMostrarFormTarea(true)}><Icono nombre="plus" size={18}/> Nueva tarea</button></div>}</div>
+          {proyectoActual ? <>
+            <div className="resumen-cabecera"><div><h2>Resumen</h2><p>Tu progreso de un vistazo</p></div><span>VISTA GENERAL</span></div>
+            <div className="stats-grid">
+              <div className="stat-card"><div className="stat-top"><span>Total tareas</span><span className="stat-icono azul"><Icono nombre="list"/></span></div><strong>{totalTareas}</strong><small>En este proyecto</small></div>
+              <div className="stat-card"><div className="stat-top"><span>Pendientes</span><span className="stat-icono gris"><Icono nombre="clock"/></span></div><strong>{tareasPendientes}</strong><small>Por empezar</small></div>
+              <div className="stat-card"><div className="stat-top"><span>En progreso</span><span className="stat-icono ambar"><Icono nombre="progress"/></span></div><strong>{tareasEnProgreso}</strong><small>En curso</small></div>
+              <div className="stat-card"><div className="stat-top"><span>Completadas</span><span className="stat-icono verde"><Icono nombre="check"/></span></div><strong>{tareasHechas}</strong><small>Finalizadas</small></div>
             </div>
-            <div className="stat-card stat-card-pendientes">
-              <p className="stat-card-label">Pendientes</p>
-              <h3 className="stat-card-valor">{tareasPendientes}</h3>
-              <p className="stat-card-sub">Por empezar</p>
-            </div>
-            <div className="stat-card stat-card-progreso">
-              <p className="stat-card-label">En progreso</p>
-              <h3 className="stat-card-valor">{tareasEnProgreso}</h3>
-              <p className="stat-card-sub">En curso</p>
-            </div>
-            <div className="stat-card stat-card-completadas">
-              <p className="stat-card-label">Completadas</p>
-              <h3 className="stat-card-valor">{tareasHechas}</h3>
-              <p className="stat-card-sub">Finalizadas</p>
-            </div>
-          </div>
-
-          <SelectorProyecto
-            proyectos={proyectos}
-            proyectoSeleccionado={proyectoSeleccionado}
-            onCambiar={setProyectoSeleccionado}
-            onEliminar={pedirEliminarProyecto}
-            selectorRef={selectorRef}
-          />
-
-          <ProyectoForm onCrear={crearProyecto} />
-
-          {proyectoSeleccionado ? (
-            <>
-              <div className="seccion-cabecera">
-                <div>
-                  <h2>Tareas activas</h2>
-                  <p>Gestiona tus prioridades del proyecto</p>
-                </div>
-              </div>
-
-              <BarraBusqueda
-                valor={busquedaTarea}
-                onCambiar={setBusquedaTarea}
-                placeholder="Buscar tarea..."
-              />
-
-              <TareaLista
-                tareas={tareasFiltradas}
-                onCambiarEstado={cambiarEstado}
-                onEditar={editarTarea}
-                onEliminar={eliminarTarea}
-              />
-
-              {mostrarFormTarea && (
-                <div className="tarea-form-overlay" onClick={() => setMostrarFormTarea(false)}>
-                  <div className="tarea-form-modal" onClick={(e) => e.stopPropagation()}>
-                    <h2>Nueva tarea</h2>
-                    <TareaForm onCrear={crearTarea} />
-                  </div>
-                </div>
-              )}
-
-              <button className="fab" onClick={() => setMostrarFormTarea(true)}>
-                + Nueva tarea
-              </button>
-            </>
-          ) : (
-            <div className="estado-vacio">
-              <p className="estado-vacio-titulo">No tienes ningún proyecto todavía</p>
-              <p className="estado-vacio-texto">Crea tu primer proyecto arriba para empezar a añadir tareas</p>
-            </div>
-          )}
+            <section className="seccion-tareas" aria-labelledby="titulo-tareas"><div className="seccion-cabecera"><div><h2 id="titulo-tareas">Tareas <span className="contador-tareas">{totalTareas}</span></h2><p>Gestiona y organiza el trabajo de tu proyecto</p></div><BarraBusqueda valor={busquedaTarea} onCambiar={setBusquedaTarea} placeholder="Buscar tareas..."/></div>
+              <TareaLista tareas={tareasFiltradas} busqueda={busquedaTarea} onCambiarEstado={cambiarEstado} onEditar={editarTarea} onEliminar={eliminarTarea} onNueva={() => setMostrarFormTarea(true)}/>
+            </section>
+          </> : <div className="estado-vacio estado-sin-proyecto"><div className="vacio-icono"><Icono nombre="folder" size={24}/></div><p className="estado-vacio-titulo">Tu espacio está listo</p><p className="estado-vacio-texto">Crea un proyecto en la barra lateral para empezar a organizar tus tareas.</p></div>}
         </div>
-      </div>
-      {proyectoAEliminar && (
-        <ConfirmarEliminarProyecto
-          proyecto={proyectoAEliminar}
-          eliminando={eliminandoProyecto}
-          error={errorEliminarProyecto}
-          onCancelar={() => cerrarConfirmacion()}
-          onConfirmar={eliminarProyecto}
-        />
-      )}
+      </main>
+      {mostrarFormTarea && <Dialogo titulo="Nueva tarea" onCerrar={() => setMostrarFormTarea(false)}><TareaForm onCrear={crearTarea} onCancelar={() => setMostrarFormTarea(false)}/></Dialogo>}
+      {proyectoAEliminar && <ConfirmarEliminarProyecto proyecto={proyectoAEliminar} eliminando={eliminandoProyecto} error={errorEliminarProyecto} onCancelar={() => cerrarConfirmacion()} onConfirmar={eliminarProyecto}/>}
     </div>
   );
 }

@@ -18,6 +18,8 @@ La interfaz utiliza un identificador de usuario fijo y una URL de API local. La 
 
 ## Capturas
 
+Las siguientes capturas corresponden a una versión anterior de la interfaz.
+
 ![Panel de tareas](docs/screenshots/dashboard.png)
 
 <details><summary>Ver más capturas</summary>

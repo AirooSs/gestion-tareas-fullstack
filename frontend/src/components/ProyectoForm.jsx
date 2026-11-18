@@ -1,61 +1,24 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
+import Icono from './Icono';
 
 function ProyectoForm({ onCrear }) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [mostrarForm, setMostrarForm] = useState(false);
-
     const manejarSubmit = (evento) => {
         evento.preventDefault();
         onCrear(name, description);
-        setName('');
-        setDescription('');
-        setMostrarForm(false);
+        setName(''); setDescription(''); setMostrarForm(false);
     };
-
-    if (!mostrarForm) {
-        return (
-            <button
-                className="btn-link"
-                onClick={() => setMostrarForm(true)}
-            >
-                + Nuevo proyecto
-            </button>
-        );
-    }
-
+    if (!mostrarForm) return <button type="button" className="nuevo-proyecto" onClick={() => setMostrarForm(true)}><Icono nombre="plus" size={17} /> Nuevo proyecto</button>;
     return (
-        <div className="proyecto-form">
-            <h2>Nuevo proyecto</h2>
-            <form onSubmit={manejarSubmit}>
-                <input
-                    type="text"
-                    placeholder="Nombre del proyecto"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                />
-                <input
-                    type="text"
-                    placeholder="Descripción"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                />
-                <div className="proyecto-form-acciones">
-                    <button type="submit" className="proyecto-form-crear">
-                        Crear
-                    </button>
-                    <button
-                        type="button"
-                        className="btn-link"
-                        onClick={() => setMostrarForm(false)}
-                    >
-                        Cancelar
-                    </button>
-                </div>
-            </form>
-        </div>
+        <form className="proyecto-form" onSubmit={manejarSubmit}>
+            <label htmlFor="proyecto-nombre">Nombre del proyecto</label>
+            <input id="proyecto-nombre" autoFocus value={name} onChange={e => setName(e.target.value)} placeholder="Ej. Lanzamiento" required />
+            <label htmlFor="proyecto-descripcion">Descripción</label>
+            <input id="proyecto-descripcion" value={description} onChange={e => setDescription(e.target.value)} placeholder="Opcional" />
+            <div className="form-acciones"><button type="button" className="boton-secundario" onClick={() => setMostrarForm(false)}>Cancelar</button><button className="boton-primario" type="submit">Crear</button></div>
+        </form>
     );
 }
-
 export default ProyectoForm;
