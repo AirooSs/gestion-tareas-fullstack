@@ -1,12 +1,4 @@
 package com.gestiontareas.infrastructure.web;
-
 import jakarta.validation.constraints.NotBlank;
-
-/**
- * DTO de entrada para editar una tarea.
- */
-
-public record EditarTareaRequest(
-    @NotBlank(message = "El título no puede estar vacío") String titulo,
-    String descripcion
-) {}
+import jakarta.validation.constraints.Size;
+public record EditarTareaRequest(@NotBlank @Size(max=255) String titulo, @Size(max=255) String descripcion) {}

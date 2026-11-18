@@ -1,8 +1,4 @@
 package com.gestiontareas.infrastructure.web;
-
-/**
- * DTO de entrada para actualizar el estado de una tarea.
- */
-
-public record ActualizarEstadoRequest(String estado) {
-}
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+public record ActualizarEstadoRequest(@NotBlank @Pattern(regexp="PENDIENTE|EN_PROGRESO|HECHO|CANCELADO") String estado) {}

@@ -1,118 +1,25 @@
 package com.gestiontareas.infrastructure.web;
 
-import com.gestiontareas.domain.model.task.TaskId;
-import com.gestiontareas.domain.model.task.TaskStatus;
-import com.gestiontareas.domain.model.project.ProjectId;
-import com.gestiontareas.domain.port.in.ActualizarEstadoTareaUseCase;
-import com.gestiontareas.domain.port.in.CrearTareaUseCase;
-import com.gestiontareas.domain.port.in.EditarTareaUseCase;
-import com.gestiontareas.domain.port.in.EliminarTareaUseCase;
-import com.gestiontareas.domain.port.in.ListarTareasPorProyectoUseCase;
-import com.gestiontareas.domain.port.in.ObtenerTareaUseCase;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import com.gestiontareas.application.demo.DemoService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
-
-/**
- * Adaptador de entrada — expone los casos de uso como endpoints REST.
- * El controller solo llama a los puertos de entrada (interfaces).
- * Nunca llama directamente a los servicios.
- */
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/tareas")
-@Tag(name = "Tareas", description = "Operaciones sobre tareas")
 public class TaskController {
-
-    private final CrearTareaUseCase crearTareaUseCase;
-    private final ObtenerTareaUseCase obtenerTareaUseCase;
-    private final ActualizarEstadoTareaUseCase actualizarEstadoTareaUseCase;
-    private final ListarTareasPorProyectoUseCase listarTareasPorProyectoUseCase;
-    private final EditarTareaUseCase editarTareaUseCase;
-    private final EliminarTareaUseCase eliminarTareaUseCase;
-
-    public TaskController(
-            CrearTareaUseCase crearTareaUseCase,
-            ObtenerTareaUseCase obtenerTareaUseCase,
-            ActualizarEstadoTareaUseCase actualizarEstadoTareaUseCase,
-            ListarTareasPorProyectoUseCase listarTareasPorProyectoUseCase,
-            EditarTareaUseCase editarTareaUseCase,
-            EliminarTareaUseCase eliminarTareaUseCase) {
-        this.crearTareaUseCase = crearTareaUseCase;
-        this.obtenerTareaUseCase = obtenerTareaUseCase;
-        this.actualizarEstadoTareaUseCase = actualizarEstadoTareaUseCase;
-        this.listarTareasPorProyectoUseCase = listarTareasPorProyectoUseCase;
-        this.editarTareaUseCase = editarTareaUseCase;
-        this.eliminarTareaUseCase = eliminarTareaUseCase;
+    private final DemoService demo;
+    public TaskController(DemoService demo) { this.demo=demo; }
+    @PostMapping public ResponseEntity<TareaResponse> create(@AuthenticationPrincipal UUID session, @Valid @RequestBody CrearTareaRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(TareaResponse.from(demo.createTask(session,request.projectId(),request.titulo(),request.descripcion())));
     }
-
-    /** Crea una nueva tarea asociada a un proyecto */
-    @Operation(summary = "Crear tarea", description = "Crea una nueva tarea asociada a un proyecto")
-    @PostMapping
-    public ResponseEntity<TareaResponse> crearTarea(@Valid @RequestBody CrearTareaRequest request) {
-        TareaResponse response = TareaResponse.from(crearTareaUseCase.ejecutar(
-                request.titulo(),
-                request.descripcion(),
-                ProjectId.of(request.projectId())));
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    /** Obtiene una tarea por su ID */
-    @Operation(summary = "Obtener tarea", description = "Obtiene una tarea por su ID")
-    @GetMapping("/{id}")
-    public ResponseEntity<TareaResponse> obtenerTarea(@PathVariable UUID id) {
-        TareaResponse response = TareaResponse.from(obtenerTareaUseCase.ejecutar(TaskId.of(id)));
-        return ResponseEntity.ok(response);
-    }
-
-    /** Actualiza el estado de una tarea */
-    @Operation(summary = "Actualizar estado", description = "Actualiza el estado de una tarea")
-    @PatchMapping("/{id}/estado")
-    public ResponseEntity<TareaResponse> actualizarEstado(
-            @PathVariable UUID id,
-            @RequestBody ActualizarEstadoRequest request) {
-        TareaResponse response = TareaResponse.from(actualizarEstadoTareaUseCase.ejecutar(
-                TaskId.of(id),
-                TaskStatus.valueOf(request.estado())));
-        return ResponseEntity.ok(response);
-    }
-
-    /** Lista todas las tareas de un proyecto */
-    @Operation(summary = "Listar tareas por proyecto", description = "Devuelve todas las tareas de un proyecto")
-    @GetMapping("/proyecto/{projectId}")
-    public ResponseEntity<List<TareaResponse>> listarPorProyecto(@PathVariable UUID projectId) {
-        List<TareaResponse> response = listarTareasPorProyectoUseCase.ejecutar(ProjectId.of(projectId))
-                .stream()
-                .map(TareaResponse::from)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(response);
-    }
-
-    /** Edita el título y descripción de una tarea */
-    @Operation(summary = "Editar tarea", description = "Edita el título y descripción de una tarea existente")
-    @PutMapping("/{id}")
-    public ResponseEntity<TareaResponse> editarTarea(
-            @PathVariable UUID id,
-            @Valid @RequestBody EditarTareaRequest request) {
-        TareaResponse response = TareaResponse.from(editarTareaUseCase.ejecutar(
-                TaskId.of(id),
-                request.titulo(),
-                request.descripcion()));
-        return ResponseEntity.ok(response);
-    }
-
-    /** Elimina una tarea por su ID */
-    @Operation(summary = "Eliminar tarea", description = "Elimina una tarea por su ID")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarTarea(@PathVariable UUID id) {
-        eliminarTareaUseCase.ejecutar(TaskId.of(id));
-        return ResponseEntity.noContent().build();
-    }
+    @GetMapping("/{id}") public TareaResponse get(@AuthenticationPrincipal UUID session, @PathVariable UUID id) { return TareaResponse.from(demo.task(session,id)); }
+    @GetMapping("/proyecto/{id}") public List<TareaResponse> list(@AuthenticationPrincipal UUID session, @PathVariable UUID id) { return demo.tasks(session,id).stream().map(TareaResponse::from).toList(); }
+    @PutMapping("/{id}") public TareaResponse edit(@AuthenticationPrincipal UUID session, @PathVariable UUID id, @Valid @RequestBody EditarTareaRequest request) { return TareaResponse.from(demo.edit(session,id,request.titulo(),request.descripcion())); }
+    @PatchMapping("/{id}/estado") public TareaResponse status(@AuthenticationPrincipal UUID session, @PathVariable UUID id, @Valid @RequestBody ActualizarEstadoRequest request) { return TareaResponse.from(demo.status(session,id,request.estado())); }
+    @DeleteMapping("/{id}") public ResponseEntity<Void> delete(@AuthenticationPrincipal UUID session, @PathVariable UUID id) { demo.deleteTask(session,id); return ResponseEntity.noContent().build(); }
 }

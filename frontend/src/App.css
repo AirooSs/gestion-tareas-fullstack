@@ -144,3 +144,6 @@ button:disabled { opacity: .6; cursor: wait; }
 .estado-punto.en_progreso, .en_progreso .estado-punto { background: var(--progreso); }
 .estado-punto.hecho, .hecho .estado-punto { background: var(--completado); }
 .estado-punto.cancelado, .cancelado .estado-punto { background: var(--destructivo); }
+
+.demo-aviso { padding: 12px; margin-bottom: 16px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--superficie); color: var(--texto); font-size: 13px; }
+.demo-aviso button { border: 0; background: transparent; color: var(--principal); font-weight: 600; }

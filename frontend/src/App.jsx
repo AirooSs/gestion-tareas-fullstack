@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
+import { apiFetch, startSession, resetSession } from './demoApi';
 import Icono from './components/Icono';
 import Dialogo from './components/Dialogo';
 import ConfirmarEliminarProyecto from './components/ConfirmarEliminarProyecto';
@@ -8,13 +9,15 @@ import TareaLista from './components/TareaLista';
 import ProyectoForm from './components/ProyectoForm';
 import BarraBusqueda from './components/BarraBusqueda';
 
-const USER_ID = '5c3a541c-5a22-45e8-92d7-600f3adfcbfb';
 
 function App() {
   const [proyectos, setProyectos] = useState([]);
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState('');
   const [tareas, setTareas] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [estadoDemo, setEstadoDemo] = useState('iniciando');
+  const [limiteDemo, setLimiteDemo] = useState(false);
+  const [intentoDemo, setIntentoDemo] = useState(0);
   const [busquedaTarea, setBusquedaTarea] = useState('');
   const [mostrarFormTarea, setMostrarFormTarea] = useState(false);
   const [proyectoAEliminar, setProyectoAEliminar] = useState(null);
@@ -26,7 +29,7 @@ function App() {
   const sidebarRef = useRef(null);
 
   const cargarProyectos = () => {
-    fetch(`http://localhost:8080/api/proyectos/usuario/${USER_ID}`)
+    apiFetch('/api/proyectos')
       .then(response => response.json())
       .then(data => {
         setProyectos(data);
@@ -37,28 +40,37 @@ function App() {
       })
       .catch(error => {
         console.error('Error al cargar proyectos:', error);
+        if (!['expired', 'stale-session', 'limit'].includes(error.message)) setEstadoDemo('error');
         setCargando(false);
       });
   };
 
   const cargarTareas = (projectId) => {
     if (!projectId) return;
-    fetch(`http://localhost:8080/api/tareas/proyecto/${projectId}`)
+    apiFetch(`/api/tareas/proyecto/${projectId}`)
       .then(response => response.json())
       .then(data => setTareas(data))
       .catch(error => console.error('Error al cargar tareas:', error));
   };
 
   useEffect(() => {
-    cargarProyectos();
-  }, []);
+    let vigente = true;
+    const caducada = () => { if (vigente) setEstadoDemo('caducada'); };
+    const limite = () => { if (vigente) setLimiteDemo(true); };
+    window.addEventListener('demo-expired', caducada);
+    window.addEventListener('demo-limit', limite);
+    startSession().then(() => {
+      if (vigente) { setEstadoDemo('activa'); cargarProyectos(); }
+    }).catch(error => { if (vigente) setEstadoDemo(error.message === 'expired' ? 'caducada' : 'error'); });
+    return () => { vigente = false; window.removeEventListener('demo-expired', caducada); window.removeEventListener('demo-limit', limite); };
+  }, [intentoDemo]);
 
   useEffect(() => {
     cargarTareas(proyectoSeleccionado);
   }, [proyectoSeleccionado]);
 
   const crearTarea = (titulo, descripcion) => {
-    fetch('http://localhost:8080/api/tareas', {
+    apiFetch(`/api/tareas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -76,13 +88,12 @@ function App() {
   };
 
   const crearProyecto = (name, description) => {
-    fetch('http://localhost:8080/api/proyectos', {
+    apiFetch(`/api/proyectos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: name,
-        description: description,
-        ownerId: USER_ID
+        description: description
       })
     })
       .then(response => response.json())
@@ -94,7 +105,7 @@ function App() {
   };
 
   const cambiarEstado = (id, nuevoEstado) => {
-    fetch(`http://localhost:8080/api/tareas/${id}/estado`, {
+    apiFetch(`/api/tareas/${id}/estado`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ estado: nuevoEstado })
@@ -105,7 +116,7 @@ function App() {
   };
 
   const editarTarea = (id, nuevoTitulo, nuevaDescripcion) => {
-    fetch(`http://localhost:8080/api/tareas/${id}`, {
+    apiFetch(`/api/tareas/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -119,7 +130,7 @@ function App() {
   };
 
   const eliminarTarea = (id) => {
-    fetch(`http://localhost:8080/api/tareas/${id}`, {
+    apiFetch(`/api/tareas/${id}`, {
       method: 'DELETE'
     })
       .then(() => cargarTareas(proyectoSeleccionado))
@@ -149,7 +160,7 @@ function App() {
     setErrorEliminarProyecto('');
     const id = proyectoAEliminar.id;
     try {
-      const response = await fetch(`http://localhost:8080/api/proyectos/${id}`, { method: 'DELETE' });
+      const response = await apiFetch(`/api/proyectos/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const proyectosActualizados = proyectos.filter(p => p.id !== id);
       setProyectos(proyectosActualizados);
@@ -177,7 +188,10 @@ function App() {
   const tareasEnProgreso = tareas.filter(t => t.status === 'EN_PROGRESO').length;
   const tareasHechas = tareas.filter(t => t.status === 'HECHO').length;
 
-  if (cargando) {
+  if (estadoDemo === 'caducada' || estadoDemo === 'error') {
+    return <div className="loading-shell"><div className="estado-vacio"><p className="estado-vacio-titulo">{estadoDemo === 'caducada' ? 'Tu demo ha caducado' : 'No se ha podido iniciar la demo'}</p><p className="estado-vacio-texto">{estadoDemo === 'caducada' ? 'Puedes empezar de nuevo con datos de ejemplo.' : 'Comprueba la conexión e inténtalo de nuevo.'}</p><button className="boton-primario" onClick={() => { resetSession(); setLimiteDemo(false); setMostrarFormTarea(false); setProyectoAEliminar(null); setBusquedaTarea(''); setProyectos([]); setTareas([]); setProyectoSeleccionado(''); setCargando(true); setEstadoDemo('iniciando'); setIntentoDemo(n => n + 1); }}>Iniciar nueva demo</button></div></div>;
+  }
+  if (cargando || estadoDemo === 'iniciando') {
     return (
       <div className="loading-shell" role="status" aria-label="Cargando proyectos">
         <div className="spinner" aria-hidden="true"></div>
@@ -202,6 +216,7 @@ function App() {
       <main className="main-area">
         <div className="topbar"><div className="breadcrumb"><Icono nombre="grid" size={15}/><span>Mis proyectos</span><span className="breadcrumb-separador">/</span><strong>{proyectoActual?.name || 'Resumen'}</strong></div><span className="topbar-label">ESPACIO DE TRABAJO</span></div>
         <div className="contenido">
+          {limiteDemo && <div className="demo-aviso" role="alert">Se ha alcanzado un límite de la demo. Espera un momento o elimina algún elemento antes de continuar. <button type="button" onClick={() => setLimiteDemo(false)}>Cerrar</button></div>}
           <div className="pagina-intro"><div><div className="eyebrow"><span className="eyebrow-punto"/> TU ESPACIO DE TRABAJO</div><h1>{proyectoActual?.name || 'Tus proyectos'}</h1><p>{proyectoActual?.description || (proyectoActual ? 'Un espacio para organizar tus ideas y avanzar cada día.' : 'Todo tu trabajo, en un solo lugar.')}</p></div>{proyectoActual && <div className="cabecera-acciones"><button ref={selectorRef} type="button" className="boton-icono peligro proyecto-eliminar" title="Eliminar proyecto" aria-label={`Eliminar proyecto ${proyectoActual.name}`} onClick={e => pedirEliminarProyecto(proyectoActual, e.currentTarget)}><Icono nombre="trash" size={18}/></button><button type="button" className="boton-primario" onClick={() => setMostrarFormTarea(true)}><Icono nombre="plus" size={18}/> Nueva tarea</button></div>}</div>
           {proyectoActual ? <>
             <div className="resumen-cabecera"><div><h2>Resumen</h2><p>Tu progreso de un vistazo</p></div><span>VISTA GENERAL</span></div>

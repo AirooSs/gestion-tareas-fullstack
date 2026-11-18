@@ -64,4 +64,10 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
+    @ExceptionHandler(com.gestiontareas.domain.exception.DemoAccessException.class)
+    public ResponseEntity<Void> handleDemoAccess(com.gestiontareas.domain.exception.DemoAccessException ex) {
+        int status = switch (ex.reason()) { case UNAUTHORIZED -> 401; case NOT_FOUND -> 404; case LIMIT -> 429; };
+        return ResponseEntity.status(status).build();
+    }
+
 }
