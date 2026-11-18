@@ -6,7 +6,8 @@ El frontend usa React 19, Vite 8, Bootstrap 5 y CSS. `main.jsx` monta `App` bajo
 
 | Componente | Función |
 |---|---|
-| `SelectorProyecto` | Selección y confirmación de eliminación de proyectos. |
+| `SelectorProyecto` | Selección de proyecto y acceso a la eliminación. |
+| `ConfirmarEliminarProyecto` | Diálogo de confirmación y mensajes de error al eliminar un proyecto. |
 | `ProyectoForm` | Formulario de creación de proyecto. |
 | `TareaForm` | Formulario de creación dentro de un modal. |
 | `TareaLista` y `TareaItem` | Lista, edición, eliminación y selección de estado. |
@@ -15,6 +16,6 @@ El frontend usa React 19, Vite 8, Bootstrap 5 y CSS. `main.jsx` monta `App` bajo
 
 Al cargar, se consultan los proyectos de un UUID fijo y se selecciona el primero si existe. Las tareas se consultan al cambiar de proyecto. La búsqueda filtra por título sin distinguir mayúsculas y ordena por título; los contadores se calculan sobre las tareas cargadas del proyecto. Se muestran total, pendientes, en progreso y hechas; el estado cancelado está disponible en el selector.
 
-La API está fijada a `http://localhost:8080` y el usuario a un UUID en `App.jsx`. No existe pantalla de autenticación ni de creación de usuarios. Las respuestas HTTP no se comprueban sistemáticamente con `response.ok`; algunos errores se registran en consola y las eliminaciones actualizan la vista al resolverse la petición aunque la respuesta indique error. Estas son limitaciones actuales, no garantías de funcionamiento.
+La API está fijada a `http://localhost:8080` y el usuario a un UUID en `App.jsx`. No existe pantalla de autenticación ni de creación de usuarios. La eliminación de proyectos requiere confirmación, advierte de que se eliminarán las tareas asociadas y comprueba `response.ok`. Durante la petición se deshabilitan las acciones; si falla, se muestra un mensaje y se puede reintentar. En otras operaciones las respuestas HTTP no se comprueban sistemáticamente y algunos errores se registran en consola. Estas son limitaciones actuales, no garantías de funcionamiento.
 
 El repositorio no declara un script de pruebas de frontend. [Puesta en marcha](getting-started.md) describe la configuración local.

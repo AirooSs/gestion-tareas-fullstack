@@ -24,6 +24,7 @@ La interfaz utiliza un identificador de usuario fijo y una URL de API local. La 
 
 ![Formulario de tarea](docs/screenshots/tasks.png)
 ![Formulario de proyecto](docs/screenshots/modal.png)
+![Confirmación de eliminación de proyecto con datos de ejemplo](docs/screenshots/eliminar-proyecto.png)
 
 </details>
 

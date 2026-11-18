@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 import SelectorProyecto from './components/SelectorProyecto';
+import ConfirmarEliminarProyecto from './components/ConfirmarEliminarProyecto';
 import TareaForm from './components/TareaForm';
 import TareaLista from './components/TareaLista';
 import ProyectoForm from './components/ProyectoForm';
@@ -15,6 +16,12 @@ function App() {
   const [cargando, setCargando] = useState(true);
   const [busquedaTarea, setBusquedaTarea] = useState('');
   const [mostrarFormTarea, setMostrarFormTarea] = useState(false);
+  const [proyectoAEliminar, setProyectoAEliminar] = useState(null);
+  const [eliminandoProyecto, setEliminandoProyecto] = useState(false);
+  const [errorEliminarProyecto, setErrorEliminarProyecto] = useState('');
+  const eliminacionEnCurso = useRef(false);
+  const botonEliminarRef = useRef(null);
+  const selectorRef = useRef(null);
 
   const cargarProyectos = () => {
     fetch(`http://localhost:8080/api/proyectos/usuario/${USER_ID}`)
@@ -117,19 +124,45 @@ function App() {
       .catch(error => console.error('Error al eliminar tarea:', error));
   };
 
-  const eliminarProyecto = (id) => {
-    fetch(`http://localhost:8080/api/proyectos/${id}`, {
-      method: 'DELETE'
-    })
-      .then(() => {
-        const proyectosActualizados = proyectos.filter(p => p.id !== id);
-        setProyectos(proyectosActualizados);
+  const pedirEliminarProyecto = (proyecto, boton) => {
+    botonEliminarRef.current = boton;
+    setErrorEliminarProyecto('');
+    setProyectoAEliminar(proyecto);
+  };
 
-        if (proyectoSeleccionado === id) {
-          setProyectoSeleccionado(proyectosActualizados.length > 0 ? proyectosActualizados[0].id : '');
-        }
-      })
-      .catch(error => console.error('Error al eliminar proyecto:', error));
+  const cerrarConfirmacion = (eliminado = false) => {
+    setProyectoAEliminar(null);
+    setErrorEliminarProyecto('');
+    requestAnimationFrame(() => {
+      const destino = !eliminado && botonEliminarRef.current?.isConnected
+        ? botonEliminarRef.current : selectorRef.current;
+      destino?.focus();
+    });
+  };
+
+  const eliminarProyecto = async () => {
+    if (eliminacionEnCurso.current || !proyectoAEliminar) return;
+    eliminacionEnCurso.current = true;
+    setEliminandoProyecto(true);
+    setErrorEliminarProyecto('');
+    const id = proyectoAEliminar.id;
+    try {
+      const response = await fetch(`http://localhost:8080/api/proyectos/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const proyectosActualizados = proyectos.filter(p => p.id !== id);
+      setProyectos(proyectosActualizados);
+      if (proyectoSeleccionado === id) {
+        setTareas([]);
+        setProyectoSeleccionado(proyectosActualizados.length > 0 ? proyectosActualizados[0].id : '');
+      }
+      cerrarConfirmacion(true);
+    } catch (error) {
+      console.error('Error al eliminar proyecto:', error);
+      setErrorEliminarProyecto('No se ha podido eliminar el proyecto. Comprueba la conexión e inténtalo de nuevo.');
+    } finally {
+      eliminacionEnCurso.current = false;
+      setEliminandoProyecto(false);
+    }
   };
 
   const tareasFiltradas = tareas
@@ -200,7 +233,8 @@ function App() {
             proyectos={proyectos}
             proyectoSeleccionado={proyectoSeleccionado}
             onCambiar={setProyectoSeleccionado}
-            onEliminar={eliminarProyecto}
+            onEliminar={pedirEliminarProyecto}
+            selectorRef={selectorRef}
           />
 
           <ProyectoForm onCrear={crearProyecto} />
@@ -248,6 +282,15 @@ function App() {
           )}
         </div>
       </div>
+      {proyectoAEliminar && (
+        <ConfirmarEliminarProyecto
+          proyecto={proyectoAEliminar}
+          eliminando={eliminandoProyecto}
+          error={errorEliminarProyecto}
+          onCancelar={() => cerrarConfirmacion()}
+          onConfirmar={eliminarProyecto}
+        />
+      )}
     </div>
   );
 }
