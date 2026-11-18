@@ -2,7 +2,7 @@
 
 [Inicio](../README.md) · [Datos](data-model.md) · [Casos de uso](use-cases.md)
 
-La aplicación consta de una SPA React que llama por HTTP a una API Spring Boot. La API utiliza JPA y Spring Data para persistir en PostgreSQL: el perfil `dev` usa una instancia local y `prod` conecta con Neon mediante JDBC y TLS con verificación del certificado y del nombre del servidor.
+La aplicación consta de una SPA React que llama por HTTP a una API Spring Boot protegida por Spring Security y tokens Bearer de sesiones anónimas. La API utiliza JPA y Spring Data para persistir en PostgreSQL: el perfil `dev` usa una instancia local y `prod` conecta con Neon mediante JDBC y TLS con verificación del certificado y del nombre del servidor.
 
 ![Arquitectura general](diagrams/svg/full-stack.svg)
 
@@ -18,7 +18,7 @@ La aplicación consta de una SPA React que llama por HTTP a una API Spring Boot.
 
 ![Puertos y adaptadores](diagrams/svg/hexagonal.svg)
 
-Los controladores consumen interfaces de casos de uso. Los servicios usan interfaces de repositorio; los adaptadores JPA las implementan y delegan en Spring Data. `BeanConfiguration` conecta las implementaciones. Los mapeadores convierten objetos de dominio y entidades JPA.
+El filtro de seguridad valida el hash del token y aplica límites en memoria. El servicio demo utiliza un puerto de persistencia para comprobar la sesión, las cuotas y la propiedad bajo transacción antes de invocar los casos de uso. Los controladores consumen los casos de uso. Los servicios usan interfaces de repositorio; los adaptadores JPA las implementan y delegan en Spring Data. `BeanConfiguration` conecta las implementaciones. Los mapeadores convierten objetos de dominio y entidades JPA.
 
 ![Dirección de dependencias](diagrams/svg/dependencies.svg)
 

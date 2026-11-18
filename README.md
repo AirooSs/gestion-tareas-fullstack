@@ -2,19 +2,19 @@
 
 Aplicación de gestión de proyectos y tareas con una interfaz React y una API REST en Java. El backend organiza el modelo, los casos de uso y los adaptadores siguiendo una arquitectura de puertos y adaptadores con elementos de DDD.
 
-**Java 21 · Spring Boot 4.0.6 · PostgreSQL / Neon · React 19 · Vite 8**
+**Java 21 · Spring Boot 4.0.9 · PostgreSQL / Neon · React 19 · Vite 8**
 
 ![Arquitectura general](docs/diagrams/svg/full-stack.svg)
 
 ## Qué permite hacer
 
-- Crear y consultar usuarios mediante la API.
+- Iniciar una sesión demo anónima con datos ficticios.
 - Crear, listar y eliminar proyectos; gestionar las tareas de cada proyecto.
 - Crear, consultar, editar, eliminar y cambiar el estado de tareas.
 - Buscar tareas por título y consultar contadores del proyecto seleccionado en la interfaz.
 - Consultar la documentación OpenAPI configurada en el backend.
 
-La interfaz utiliza un identificador de usuario fijo y una URL de API local. La asignación de tareas aparece en el modelo, pero no existe un caso de uso ni endpoint de asignación en el código actual. No hay autenticación ni autorización implementadas.
+La demo crea una sesión anónima temporal con datos ficticios por visitante; cada sesión solo puede acceder a sus proyectos y tareas. La asignación de tareas aparece en el modelo, pero no existe un caso de uso ni endpoint de asignación en el código actual. La API protege las operaciones de la demo mediante tokens y comprobaciones de propiedad.
 
 ## Capturas
 
@@ -41,16 +41,16 @@ Se necesitan Java 21, PostgreSQL local o una base Neon preparada, Node.js y npm.
 
 Para ejecutar con PostgreSQL local:
 
-1. Crear la base de datos `gestiontareas` y establecer `DB_PASSWORD` con la contraseña del usuario PostgreSQL `postgres`.
+1. Crear una base local nueva `gestiontareas`, establecer `DB_PASSWORD` y habilitar `FLYWAY_ENABLED=true` para aplicar las migraciones en esa base aislada.
 2. Desde `backend/`, ejecutar `./mvnw spring-boot:run` o, en Windows, `.\mvnw.cmd spring-boot:run`.
 3. Desde `frontend/`, ejecutar `npm install` y después `npm run dev`.
 4. Abrir `http://localhost:5173`. La API se configura en `http://localhost:8080`.
 
-El perfil `dev` usa PostgreSQL local; el perfil `prod` utiliza `DATABASE_URL` de Neon con TLS y valida el esquema existente sin modificarlo. La configuración de Neon y los pasos de arranque están en [Puesta en marcha](docs/getting-started.md).
+Flyway está desactivado por defecto y no debe habilitarse en una base existente sin revisar su esquema y su baseline. El perfil `dev` usa PostgreSQL local; el perfil `prod` utiliza `DATABASE_URL` de Neon con TLS y valida el esquema existente sin modificarlo. La configuración de Neon y los pasos de arranque están en [Puesta en marcha](docs/getting-started.md).
 
-La validación del backend cubre 28 pruebas; consulta [Pruebas](docs/testing.md) para conocer el resultado y sus condiciones.
+La validación del backend incluye pruebas de seguridad y de integración; consulta [Pruebas](docs/testing.md) para conocer el resultado y sus condiciones.
 
-Consulta [Puesta en marcha](docs/getting-started.md) antes de utilizar el frontend: contiene información necesaria sobre el identificador de usuario fijo, configuración y pruebas.
+Consulta [Puesta en marcha](docs/getting-started.md) antes de utilizar el frontend: contiene información sobre sesiones, configuración y pruebas.
 
 ## Documentación técnica
 
@@ -62,11 +62,12 @@ Consulta [Puesta en marcha](docs/getting-started.md) antes de utilizar el fronte
 - [Pruebas](docs/testing.md)
 - [Frontend](docs/frontend.md)
 - [Puesta en marcha](docs/getting-started.md)
+- [Despliegue en Render y Vercel](docs/deployment.md)
 - [Catálogo de diagramas](docs/diagrams/README.md)
 
 ## Evolución posible
 
-Entre las mejoras pendientes están la autenticación y autorización, la configuración externa del usuario y de la URL de API, el tratamiento consistente de errores, la integridad referencial y la ampliación de pruebas. Son propuestas, no funcionalidades existentes.
+Entre las mejoras pendientes están la autenticación de usuarios registrados, la configuración externa del usuario y de la URL de API, el tratamiento consistente de errores, la integridad referencial y la ampliación de pruebas. Son propuestas, no funcionalidades existentes.
 
 ## Autor
 

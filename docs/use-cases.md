@@ -20,13 +20,13 @@ Los puertos de entrada de `domain/port/in` son implementados por servicios de ap
 | Tareas | Eliminar | Comprueba existencia y elimina por ID. |
 | Tareas | Actualizar estado | Busca, cambia estado y guarda; si falta, lanza `RuntimeException` genérica. |
 
-Las listas consultan por identificador sin comprobar previamente la existencia del propietario o proyecto. El modelo también tiene métodos de asignación y renombrado, pero no hay que confundirlos con operaciones expuestas por la API.
+En la API demo, el servicio de sesión comprueba previamente la propiedad de los proyectos y tareas. Los casos de uso de usuarios permanecen en el dominio, pero sus rutas HTTP están deshabilitadas. El modelo también tiene métodos de asignación y renombrado, pero no hay que confundirlos con operaciones expuestas por la API.
 
 ## Creación de una tarea
 
 ![Secuencia de creación](diagrams/svg/create-task.svg)
 
-El controlador valida el DTO y convierte el UUID al identificador de dominio. El servicio crea `Task` y llama al puerto de salida; el adaptador convierte a entidad JPA, guarda y reconstruye el modelo. El controlador devuelve el DTO con código 201.
+El controlador valida el DTO y el servicio demo comprueba que el proyecto pertenece a la sesión antes de convertir el UUID al identificador de dominio. El servicio crea `Task` y llama al puerto de salida; el adaptador convierte a entidad JPA, guarda y reconstruye el modelo. El controlador devuelve el DTO con código 201.
 
 ## Eliminación de un proyecto
 

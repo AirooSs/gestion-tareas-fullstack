@@ -19,9 +19,11 @@ El perfil predeterminado es `dev`. La configuración apunta a `jdbc:postgresql:/
 
 ```powershell
 $env:DB_PASSWORD = "tu_contraseña"
+# Solo para una base nueva y aislada:
+$env:FLYWAY_ENABLED = "true"
 ```
 
-Adapta el entorno local a estos valores. No incluyas contraseñas en el repositorio. El perfil de desarrollo usa `spring.jpa.hibernate.ddl-auto=update`.
+Para ejecutar la demo, usa una base local nueva y aislada y habilita Flyway como se muestra. El esquema existente sin historial Flyway necesita una revisión y un baseline explícito; no habilites automáticamente las migraciones sobre una base con datos. Adapta el entorno local a estos valores. No incluyas contraseñas en el repositorio. El perfil de desarrollo usa `spring.jpa.hibernate.ddl-auto=update`.
 
 ## Backend
 
@@ -37,7 +39,7 @@ En Linux o macOS:
 ./mvnw spring-boot:run
 ```
 
-La configuración habitual expone la API en `http://localhost:8080` y Swagger UI en `http://localhost:8080/swagger-ui/index.html`. Su disponibilidad debe comprobarse al arrancar la aplicación.
+La configuración habitual expone la API en `http://localhost:8080`. La documentación OpenAPI está deshabilitada por la política de seguridad de la demo.
 
 ## Frontend
 
@@ -48,9 +50,9 @@ npm install
 npm run dev
 ```
 
-Abre `http://localhost:5173`. CORS solo permite ese origen para `/api/**`. Si Vite escoge otro puerto, ese origen no coincide con la configuración.
+Abre `http://localhost:5173`. Por defecto, CORS permite ese origen para `/api/**`. Si Vite usa otro puerto, configura `CORS_ALLOWED_ORIGINS` en el backend. El frontend usa `VITE_API_URL` si está definida o `http://localhost:8080` en caso contrario.
 
-`App.jsx` usa el UUID fijo `5c3a541c-5a22-45e8-92d7-600f3adfcbfb` como propietario y consulta sus proyectos. La API de creación de usuarios genera UUID y la interfaz no permite elegirlo. Las entidades JPA actuales no declaran una clave foránea para `owner_id`; por ello no se debe asumir que la creación de proyectos valide la existencia del usuario. Para un entorno coherente con usuarios reales será necesario adaptar esa configuración o preparar datos apropiados; esto no se realiza automáticamente.
+La interfaz solicita una sesión demo y conserva su token en `sessionStorage`. Flyway está desactivado por defecto: para una base nueva y aislada, establece `FLYWAY_ENABLED=true` y usa `ddl-auto=validate`. No actives migraciones en una base existente sin revisar previamente el esquema y preparar un baseline explícito.
 
 ## Pruebas
 
@@ -74,3 +76,5 @@ Set-Location backend
 ```
 
 En otros entornos, proporciona `DATABASE_URL` directamente mediante el gestor de secretos del despliegue y activa `SPRING_PROFILES_ACTIVE=prod`. Evita mostrar, compartir o guardar la URI en archivos versionados. El archivo `.neon` también permanece local y está ignorado por Git.
+
+Para preparar Render y Vercel, consulta [Despliegue](deployment.md).

@@ -4,20 +4,13 @@
 
 ![Modelo de datos](diagrams/svg/data-model.svg)
 
-Las clases `UserEntity`, `ProjectEntity` y `TaskEntity` definen las tablas siguientes. Los identificadores son UUID proporcionados por el dominio.
+| Tabla | Contenido |
+|---|---|
+| `demo_sessions` | UUID, hash SHA-256 único del token y fecha de caducidad. |
+| `proyectos` | UUID, nombre, descripción y `owner_id` con el UUID de la sesión demo. |
+| `tareas` | UUID, título, descripción, estado, `project_id` y asignación opcional. |
+| `usuarios` | Tabla anterior conservada; su API está deshabilitada para la demo. |
 
-| Tabla | Columnas | Restricciones declaradas en JPA |
-|---|---|---|
-| `usuarios` | `id`, `name`, `email` | ID; nombre y email no nulos; email único. |
-| `proyectos` | `id`, `name`, `description`, `owner_id` | ID; nombre y propietario no nulos. |
-| `tareas` | `id`, `titulo`, `descripcion`, `status`, `project_id`, `assigned_to` | ID; título, estado y proyecto no nulos. |
+Las referencias entre sesiones, proyectos y tareas son lógicas; las migraciones no añaden claves foráneas a las tablas existentes. El servicio comprueba propiedad antes de leer o modificar y elimina las tareas antes del proyecto. La limpieza borra únicamente los datos vinculados a sesiones demo caducadas.
 
-`owner_id`, `project_id` y `assigned_to` representan referencias lógicas por UUID. Las entidades no declaran asociaciones JPA ni claves foráneas mediante anotaciones; tampoco hay cascada JPA declarada. El esquema de una base de datos concreta podría contener restricciones adicionales ajenas a estas clases. La eliminación de tareas de un proyecto se ejecuta explícitamente desde el servicio.
-
-La creación de proyecto no consulta si existe el propietario y la creación de tarea no consulta si existe el proyecto. El campo `assigned_to` es opcional; aunque el modelo permite asignar una tarea, la API no expone esa operación.
-
-Los estados de tarea son `PENDIENTE`, `EN_PROGRESO`, `HECHO` y `CANCELADO`. Se almacenan como texto. El constructor establece `PENDIENTE` y `cambiarEstado` asigna el valor recibido sin definir transiciones permitidas.
-
-En desarrollo Hibernate usa `ddl-auto=update`; en el perfil de pruebas se usa `create-drop`. No se ha inspeccionado una base de datos desplegada.
-
-Las fuentes editables y exportaciones están disponibles en el [catálogo de diagramas](diagrams/README.md).
+Flyway contiene una migración inicial y otra para sesiones. Su ejecución automática está desactivada salvo `FLYWAY_ENABLED=true`. Para una base existente sin historial de Flyway no se debe activar `baseline-on-migrate`: requiere una revisión y una estrategia de baseline explícita antes de aplicar cambios. Nunca se han ejecutado estas migraciones en producción como parte de esta implementación.

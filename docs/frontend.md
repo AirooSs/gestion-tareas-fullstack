@@ -18,8 +18,6 @@ El frontend usa React 19, Vite 8, Bootstrap 5 y CSS. `main.jsx` monta `App` bajo
 
 La interfaz utiliza una paleta definida mediante variables CSS y adapta la navegación y las tarjetas a pantallas pequeñas. El botón de la cabecera permite eliminar el proyecto activo. El [README](../README.md#capturas) muestra el panel y los flujos de creación y eliminación de proyectos.
 
-Al cargar, se consultan los proyectos de un UUID fijo y se selecciona el primero si existe. Las tareas se consultan al cambiar de proyecto. La búsqueda filtra por título sin distinguir mayúsculas y ordena por título; los contadores se calculan sobre las tareas cargadas del proyecto. Se muestran total, pendientes, en progreso y hechas; el estado cancelado está disponible en el selector.
+Al cargar, la interfaz crea o recupera una sesión anónima por pestaña y envía su token Bearer a la API. El token se guarda en `sessionStorage`; cuando caduca, la interfaz permite iniciar una demo nueva. Cada sesión recibe datos ficticios independientes. La URL base se configura con `VITE_API_URL` y usa `http://localhost:8080` por defecto.
 
-La API está fijada a `http://localhost:8080` y el usuario a un UUID en `App.jsx`. No existe pantalla de autenticación ni de creación de usuarios. La eliminación de proyectos requiere confirmación, advierte de que se eliminarán las tareas asociadas y comprueba `response.ok`. Durante la petición se deshabilitan las acciones; si falla, se muestra un mensaje y se puede reintentar. En otras operaciones las respuestas HTTP no se comprueban sistemáticamente y algunos errores se registran en consola. Estas son limitaciones actuales, no garantías de funcionamiento.
-
-El repositorio no declara un script de pruebas de frontend. [Puesta en marcha](getting-started.md) describe la configuración local.
+La búsqueda filtra las tareas por título. La eliminación de proyectos solicita confirmación y comprueba la respuesta. La política CSP para Vercel está en `frontend/vercel.json`; `connect-src` solo permite el mismo origen por defecto y debe ampliarse al origen exacto de la API antes de publicar.
