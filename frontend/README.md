@@ -1,16 +1,14 @@
-# React + Vite
+# Frontend · Gestión de Tareas
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interfaz React 19 con Vite 8 y Bootstrap 5 para gestionar proyectos y tareas mediante la API REST. El estado y las peticiones se coordinan en `src/App.jsx`.
 
-Currently, two official plugins are available:
+Desde este directorio:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+La dirección habitual es `http://localhost:5173`; el código utiliza la API en `http://localhost:8080` y un UUID de usuario fijo. Lee [Puesta en marcha](../docs/getting-started.md) para conocer esta limitación y [Frontend](../docs/frontend.md) para la descripción de componentes y comportamiento.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Otros comandos disponibles: `npm run build`, `npm run lint` y `npm run preview`. No hay un comando de pruebas de frontend declarado en `package.json`.

@@ -17,6 +17,9 @@ frontend/.vite/
 # Historial local del editor
 .history/
 
+# Caché local de PowerShell
+/Microsoft/
+
 # Logs
 *.log
 npm-debug.log*
