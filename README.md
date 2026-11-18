@@ -18,21 +18,28 @@ La interfaz utiliza un identificador de usuario fijo y una URL de API local. La 
 
 ## Capturas
 
-Las siguientes capturas corresponden a una versión anterior de la interfaz.
+**Panel del proyecto** · Navegación por proyectos, resumen y tareas.
 
-![Panel de tareas](docs/screenshots/dashboard.png)
+![Panel del proyecto con la barra lateral, las estadísticas y las tareas](docs/screenshots/project-dashboard.png)
 
-<details><summary>Ver más capturas</summary>
+<details>
+<summary>Ver creación y eliminación de proyectos</summary>
 
-![Formulario de tarea](docs/screenshots/tasks.png)
-![Formulario de proyecto](docs/screenshots/modal.png)
-![Confirmación de eliminación de proyecto con datos de ejemplo](docs/screenshots/eliminar-proyecto.png)
+**Crear un proyecto**
+
+<img src="docs/screenshots/project-creation.png" alt="Formulario de creación de proyecto en la barra lateral" width="260">
+
+**Confirmar la eliminación**
+
+![Diálogo que confirma la eliminación de un proyecto y sus tareas](docs/screenshots/project-delete-confirmation.png)
 
 </details>
 
 ## Inicio rápido
 
 Se necesitan Java 21, PostgreSQL local o una base Neon preparada, Node.js y npm. Docker es necesario para las pruebas que usan Testcontainers.
+
+Para ejecutar con PostgreSQL local:
 
 1. Crear la base de datos `gestiontareas` y establecer `DB_PASSWORD` con la contraseña del usuario PostgreSQL `postgres`.
 2. Desde `backend/`, ejecutar `./mvnw spring-boot:run` o, en Windows, `.\mvnw.cmd spring-boot:run`.

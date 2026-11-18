@@ -16,7 +16,7 @@ El frontend usa React 19, Vite 8, Bootstrap 5 y CSS. `main.jsx` monta `App` bajo
 | `BarraBusqueda` | Entrada para el filtro por título. |
 | `SelectorProyecto` y `ProyectoLista` | Componentes anteriores que no se importan en `App.jsx`. |
 
-La interfaz utiliza una paleta definida mediante variables CSS y adapta la navegación y las tarjetas a pantallas pequeñas. El botón de la cabecera permite eliminar el proyecto activo.
+La interfaz utiliza una paleta definida mediante variables CSS y adapta la navegación y las tarjetas a pantallas pequeñas. El botón de la cabecera permite eliminar el proyecto activo. El [README](../README.md#capturas) muestra el panel y los flujos de creación y eliminación de proyectos.
 
 Al cargar, se consultan los proyectos de un UUID fijo y se selecciona el primero si existe. Las tareas se consultan al cambiar de proyecto. La búsqueda filtra por título sin distinguir mayúsculas y ordena por título; los contadores se calculan sobre las tareas cargadas del proyecto. Se muestran total, pendientes, en progreso y hechas; el estado cancelado está disponible en el selector.
 
