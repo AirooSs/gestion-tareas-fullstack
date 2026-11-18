@@ -20,4 +20,4 @@ La interfaz utiliza una paleta definida mediante variables CSS y adapta la naveg
 
 Al cargar, la interfaz crea o recupera una sesión anónima por pestaña y envía su token Bearer a la API. El token se guarda en `sessionStorage`; cuando caduca, la interfaz permite iniciar una demo nueva. Cada sesión recibe datos ficticios independientes. La URL base se configura con `VITE_API_URL` y usa `http://localhost:8080` por defecto.
 
-La búsqueda filtra las tareas por título. La eliminación de proyectos solicita confirmación y comprueba la respuesta. La política CSP para Vercel está en `frontend/vercel.json`; `connect-src` solo permite el mismo origen por defecto y debe ampliarse al origen exacto de la API antes de publicar.
+La búsqueda filtra las tareas por título. La eliminación de proyectos solicita confirmación y comprueba la respuesta. La política CSP para Vercel está en `frontend/vercel.json`; `connect-src` permite exclusivamente el origen configurado del backend en Render.

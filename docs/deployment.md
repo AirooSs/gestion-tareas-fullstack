@@ -28,7 +28,7 @@ El perfil `prod` verifica TLS y el esquema existente en Neon (`ddl-auto=validate
 
 ## Frontend en Vercel
 
-Importa el repositorio con `frontend` como directorio raíz y el preset Vite. El comando de compilación es `npm run build` y el directorio de salida es `dist`. Configura en Vercel la variable de compilación `VITE_API_URL` con el origen HTTPS público del backend de Render, sin `/api`, por ejemplo `https://backend.example.com`. Es pública en el código distribuido al navegador: nunca incluyas contraseñas ni otras credenciales. Tras cambiarla, vuelve a desplegar el frontend. En desarrollo, si no se define, se usa `http://localhost:8080`.
+Importa el repositorio con `frontend` como directorio raíz y el preset Vite. El comando de compilación es `npm run build` y el directorio de salida es `dist`. Configura en Vercel la variable de compilación `VITE_API_URL` con el origen HTTPS público del backend de Render, sin `/api`: `https://gestion-tareas-backend-en0q.onrender.com`. Es pública en el código distribuido al navegador: nunca incluyas contraseñas ni otras credenciales. Tras cambiarla, vuelve a desplegar el frontend. En desarrollo, si no se define, se usa `http://localhost:8080`.
 
 Incluye el origen concreto de Vercel en `CORS_ALLOWED_ORIGINS`; si utilizas previsualizaciones con dominios distintos, autoriza explícitamente cada origen que deba funcionar. CORS restringe lecturas desde navegadores y no es un mecanismo de autenticación.
 
@@ -38,7 +38,7 @@ El token aleatorio se almacena como hash en PostgreSQL y en `sessionStorage` del
 
 El limitador en memoria restringe peticiones por dirección remota y sesión, y establece una cuota más estricta para crear sesiones; no es distribuido y se reinicia con la instancia. Detrás de proxies varios usuarios pueden compartir una dirección y sufrir limitaciones comunes. No confíes en cabeceras de IP del cliente sin configurar proxies de confianza. Los límites reducen el abuso, pero no evitan ataques distribuidos ni agotan el riesgo de costes o indisponibilidad. Usa datos ficticios, una base Neon aislada y monitoriza el uso.
 
-La CSP del frontend está en `frontend/vercel.json`; su `connect-src https://*.onrender.com` permite subdominios de Render para facilitar la configuración, de modo que conviene sustituirlo por el origen exacto de la API antes de publicar. El token en `sessionStorage` puede ser robado si se ejecuta JavaScript malicioso en la página. CORS no protege contra llamadas directas.
+La CSP del frontend está en `frontend/vercel.json`; su `connect-src` permite únicamente el origen exacto del backend en Render. Si cambia la URL de la API, actualiza tanto la CSP como `VITE_API_URL`. El token en `sessionStorage` puede ser robado si se ejecuta JavaScript malicioso en la página. CORS no protege contra llamadas directas.
 
 Las migraciones Flyway están deshabilitadas por defecto (`FLYWAY_ENABLED=false`). En una base de datos nueva y aislada se puede habilitar `FLYWAY_ENABLED=true`; para una base existente sin historial de Flyway hay que revisar el esquema y preparar el baseline manualmente antes de habilitarlas. No ejecutar migraciones en producción sin autorización. La base aislada debe estar preparada antes de arrancar el perfil `prod`.
 
