@@ -2,7 +2,7 @@
 
 [Inicio](../README.md) · [Datos](data-model.md) · [Casos de uso](use-cases.md)
 
-La aplicación consta de una SPA React que llama por HTTP a una API Spring Boot. La API utiliza JPA y Spring Data para persistir en PostgreSQL.
+La aplicación consta de una SPA React que llama por HTTP a una API Spring Boot. La API utiliza JPA y Spring Data para persistir en PostgreSQL: el perfil `dev` usa una instancia local y `prod` conecta con Neon mediante JDBC y TLS con verificación del certificado y del nombre del servidor.
 
 ![Arquitectura general](diagrams/svg/full-stack.svg)
 
@@ -14,6 +14,7 @@ La aplicación consta de una SPA React que llama por HTTP a una API Spring Boot.
 | Aplicación | `application/service` | Implementaciones de los casos de uso que coordinan entidades y repositorios. |
 | Infraestructura web | `infrastructure/web` | Controladores, DTO, validación HTTP, errores, CORS y configuración de beans. |
 | Persistencia | `infrastructure/persistence` | Entidades JPA, mapeadores, adaptadores y repositorios Spring Data. |
+| Configuración de Neon | `infrastructure/config` | Conversión de `DATABASE_URL` en un datasource JDBC para el perfil `prod`. |
 
 ![Puertos y adaptadores](diagrams/svg/hexagonal.svg)
 
@@ -22,6 +23,8 @@ Los controladores consumen interfaces de casos de uso. Los servicios usan interf
 ![Dirección de dependencias](diagrams/svg/dependencies.svg)
 
 Las flechas del diagrama de dependencias expresan dependencias de código, no el orden temporal de una petición. El servicio de eliminación de proyectos importa `@Transactional` de Spring, por lo que la capa de aplicación no es completamente independiente del framework.
+
+El perfil `prod` emplea `ddl-auto=validate`, por lo que requiere un esquema compatible ya preparado y no crea ni modifica tablas al arrancar. `dev` conserva la configuración local y `ddl-auto=update`. Las credenciales solo se entregan al backend mediante variables de entorno.
 
 ## DDD en el código
 

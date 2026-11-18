@@ -3,4 +3,5 @@ flowchart TD
  A["Interfaz React"] -->|HTTP| B["Controladores REST"]
  B --> C["Casos de uso y dominio"]
  C --> D["Adaptadores JPA"]
- D --> E[("PostgreSQL")]
+ D -->|"dev"| E[("PostgreSQL local")]
+ D -->|"prod / JDBC + TLS"| F[("Neon PostgreSQL")]

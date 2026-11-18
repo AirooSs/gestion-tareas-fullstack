@@ -2,7 +2,7 @@
 
 Aplicación de gestión de proyectos y tareas con una interfaz React y una API REST en Java. El backend organiza el modelo, los casos de uso y los adaptadores siguiendo una arquitectura de puertos y adaptadores con elementos de DDD.
 
-**Java 21 · Spring Boot 4.0.6 · PostgreSQL · React 19 · Vite 8**
+**Java 21 · Spring Boot 4.0.6 · PostgreSQL / Neon · React 19 · Vite 8**
 
 ![Arquitectura general](docs/diagrams/svg/full-stack.svg)
 
@@ -32,12 +32,16 @@ Las siguientes capturas corresponden a una versión anterior de la interfaz.
 
 ## Inicio rápido
 
-Se necesitan Java 21, PostgreSQL, Node.js y npm. Docker es necesario para las pruebas que usan Testcontainers.
+Se necesitan Java 21, PostgreSQL local o una base Neon preparada, Node.js y npm. Docker es necesario para las pruebas que usan Testcontainers.
 
 1. Crear la base de datos `gestiontareas` y establecer `DB_PASSWORD` con la contraseña del usuario PostgreSQL `postgres`.
 2. Desde `backend/`, ejecutar `./mvnw spring-boot:run` o, en Windows, `.\mvnw.cmd spring-boot:run`.
 3. Desde `frontend/`, ejecutar `npm install` y después `npm run dev`.
 4. Abrir `http://localhost:5173`. La API se configura en `http://localhost:8080`.
+
+El perfil `dev` usa PostgreSQL local; el perfil `prod` utiliza `DATABASE_URL` de Neon con TLS y valida el esquema existente sin modificarlo. La configuración de Neon y los pasos de arranque están en [Puesta en marcha](docs/getting-started.md).
+
+La validación del backend cubre 28 pruebas; consulta [Pruebas](docs/testing.md) para conocer el resultado y sus condiciones.
 
 Consulta [Puesta en marcha](docs/getting-started.md) antes de utilizar el frontend: contiene información necesaria sobre el identificador de usuario fijo, configuración y pruebas.
 

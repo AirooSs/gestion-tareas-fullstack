@@ -55,3 +55,22 @@ Abre `http://localhost:5173`. CORS solo permite ese origen para `/api/**`. Si Vi
 ## Pruebas
 
 Consulta [Pruebas](testing.md). Docker es necesario para las pruebas con PostgreSQL en contenedor. La instalación de dependencias y ejecución de pruebas modifican archivos locales y requieren conectividad o componentes disponibles.
+
+## Neon PostgreSQL (perfil de producción)
+
+Neon CLI enlaza este directorio con el proyecto y la rama seleccionados y guarda la conexión en `.env.local`, que no se debe publicar. `neon deploy` actualiza las variables locales; `DATABASE_URL` contiene datos confidenciales. El backend transforma esa URI en una conexión JDBC, usa el almacén de certificados de Java y verifica el certificado y el nombre del servidor (`sslmode=verify-full`). El navegador y el frontend no reciben estas credenciales.
+
+El perfil `prod` valida el esquema existente y no crea ni actualiza tablas automáticamente. La base de datos debe contar previamente con las tablas compatibles `proyectos`, `tareas` y `usuarios`; una base sin ese esquema no arrancará. El perfil predeterminado `dev` sigue utilizando PostgreSQL local.
+
+Para cargar únicamente `DATABASE_URL` en la sesión actual de PowerShell y arrancar el backend desde la raíz del repositorio:
+
+```powershell
+$linea = Get-Content -LiteralPath .env.local | Where-Object { $_ -match '^DATABASE_URL=' } | Select-Object -First 1
+if (-not $linea) { throw 'Falta DATABASE_URL en .env.local' }
+$env:DATABASE_URL = $linea.Substring('DATABASE_URL='.Length).Trim().Trim('"').Trim("'")
+$env:SPRING_PROFILES_ACTIVE = 'prod'
+Set-Location backend
+.\mvnw.cmd spring-boot:run
+```
+
+En otros entornos, proporciona `DATABASE_URL` directamente mediante el gestor de secretos del despliegue y activa `SPRING_PROFILES_ACTIVE=prod`. Evita mostrar, compartir o guardar la URI en archivos versionados. El archivo `.neon` también permanece local y está ignorado por Git.
