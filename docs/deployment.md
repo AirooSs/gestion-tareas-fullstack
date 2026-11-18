@@ -8,7 +8,7 @@ La aplicación se puede preparar con el backend en Render, el frontend en Vercel
 
 Se recomienda un proyecto Neon independiente con una base vacía y credenciales exclusivas para la demo. Así se separan los datos y los límites de uso del esquema existente. En la inspección de solo lectura del 18 de noviembre de 2026, la base Neon anterior contenía las tablas `usuarios`, `proyectos` y `tareas`, pero no `demo_sessions` ni `flyway_schema_history`. La migración `V1` crea las tablas originales y fallaría sobre ese esquema; no se debe resolver con baseline automático sin revisión.
 
-Una vez creada y comprobada la base demo vacía, ejecuta `V1` y `V2` con Flyway **solo tras autorizar esa acción**. Comprueba después el historial y vuelve a dejar `FLYWAY_ENABLED=false` en el servicio. No se han creado bases ni ejecutado migraciones en Neon durante la revisión.
+La base Neon independiente para la demo se comprobó vacía y, con autorización expresa, se aplicaron y validaron las migraciones `V1` y `V2`. La base anterior no se modificó. Flyway sigue desactivado por defecto (`FLYWAY_ENABLED=false`). Para preparar otra base, comprueba primero su contenido, solicita autorización antes de migrarla y verifica después el historial de Flyway.
 
 ## Backend en Render
 
