@@ -51,8 +51,6 @@ public class DemoService {
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         UUID id = UUID.randomUUID(); Instant expiry = Instant.now().plus(hours, ChronoUnit.HOURS);
         demo.createSession(id, hash(token), expiry, maxSessions);
-        var project = createProject.ejecutar("Proyecto de ejemplo", "Organiza tus tareas de demostración", UserId.of(id));
-        createTask.ejecutar("Explorar la aplicación", "Edita esta tarea o cambia su estado", project.getId());
         return new Session(token, expiry);
     }
     private void active(UUID id) { demo.lockActiveSession(id); }

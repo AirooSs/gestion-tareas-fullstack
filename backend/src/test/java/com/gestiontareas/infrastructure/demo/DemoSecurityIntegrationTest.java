@@ -21,11 +21,15 @@ class DemoSecurityIntegrationTest {
  final HttpClient client=HttpClient.newHttpClient();
  HttpResponse<String> req(String m,String p,String t,String j) throws Exception { var b=HttpRequest.newBuilder(URI.create("http://localhost:"+port+p)).header("Content-Type","application/json"); if(t!=null)b.header("Authorization","Bearer "+t); return client.send(b.method(m,j==null?HttpRequest.BodyPublishers.noBody():HttpRequest.BodyPublishers.ofString(j)).build(),HttpResponse.BodyHandlers.ofString()); }
  String session() throws Exception {var r=req("POST","/api/demo/session",null,null);assertEquals(200,r.statusCode(),r.body());return JsonPath.read(r.body(),"$.token");}
- String project(String t) throws Exception {var r=req("GET","/api/proyectos",t,null);assertEquals(200,r.statusCode());return JsonPath.read(r.body(),"$[0].id");}
- String task(String t,String p) throws Exception {var r=req("GET","/api/tareas/proyecto/"+p,t,null);assertEquals(200,r.statusCode());return JsonPath.read(r.body(),"$[0].id");}
+ String project(String t) throws Exception {var r=req("POST","/api/proyectos",t,"{\"name\":\"Project\"}");assertEquals(201,r.statusCode());return JsonPath.read(r.body(),"$.id");}
+ String task(String t,String p) throws Exception {var r=req("POST","/api/tareas",t,"{\"titulo\":\"Task\",\"projectId\":\""+p+"\"}");assertEquals(201,r.statusCode());return JsonPath.read(r.body(),"$.id");}
  @Test void isolationAndAuthentication() throws Exception {
   assertEquals(401,req("GET","/api/proyectos",null,null).statusCode()); assertEquals(401,req("GET","/api/proyectos","invalid",null).statusCode());
-  String a=session(),b=session(),p=project(a),t=task(a,p);
+  String a=session(),b=session();
+  assertEquals("[]",req("GET","/api/proyectos",a,null).body());
+  assertEquals("[]",req("GET","/api/proyectos",b,null).body());
+  String p=project(a),t=task(a,p);
+  assertEquals("[]",req("GET","/api/proyectos",b,null).body());
   assertEquals(403,req("POST","/api/usuarios",b,"{}").statusCode());
   var forged=req("POST","/api/proyectos",b,"{\"name\":\"Forged\",\"ownerId\":\""+p+"\"}");
   assertTrue(forged.statusCode()==201 || forged.statusCode()==400);
@@ -49,10 +53,11 @@ class DemoSecurityIntegrationTest {
   String token=session();
   var a=java.util.concurrent.CompletableFuture.supplyAsync(() -> { try { return req("POST","/api/proyectos",token,"{\"name\":\"A\"}").statusCode(); } catch (Exception e) { throw new RuntimeException(e); } });
   var b=java.util.concurrent.CompletableFuture.supplyAsync(() -> { try { return req("POST","/api/proyectos",token,"{\"name\":\"B\"}").statusCode(); } catch (Exception e) { throw new RuntimeException(e); } });
-  assertEquals(java.util.Set.of(201,429), java.util.Set.of(a.get(),b.get()));
+  assertEquals(201, a.get()); assertEquals(201, b.get());
+  assertEquals(429, req("POST","/api/proyectos",token,"{\"name\":\"C\"}").statusCode());
  }
  @Test void quotas() throws Exception {
-  String token=session(),p=project(token);
+  String token=session(),p=project(token); task(token,p);
   assertEquals(201,req("POST","/api/proyectos",token,"{\"name\":\"Two\"}").statusCode()); assertEquals(429,req("POST","/api/proyectos",token,"{\"name\":\"Three\"}").statusCode());
   assertEquals(201,req("POST","/api/tareas",token,"{\"titulo\":\"Two\",\"projectId\":\""+p+"\"}").statusCode()); assertEquals(429,req("POST","/api/tareas",token,"{\"titulo\":\"Three\",\"projectId\":\""+p+"\"}").statusCode());
  }
