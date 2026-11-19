@@ -6,7 +6,7 @@
 
 | Método y ruta | Cuerpo | Resultado |
 |---|---|---|
-| `POST /api/demo/session` | — | 200, sesión y datos ficticios iniciales |
+| `POST /api/demo/session` | — | 200, sesión vacía |
 | `GET /api/proyectos` | — | Lista de proyectos de la sesión |
 | `POST /api/proyectos` | `name`, `description` | 201, proyecto propio |
 | `DELETE /api/proyectos/{id}` | — | 204, elimina el proyecto propio y sus tareas |

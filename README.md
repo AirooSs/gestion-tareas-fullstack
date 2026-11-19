@@ -8,13 +8,13 @@ Aplicación de gestión de proyectos y tareas con una interfaz React y una API R
 
 ## Qué permite hacer
 
-- Iniciar una sesión demo anónima con datos ficticios.
+- Iniciar una sesión demo anónima vacía.
 - Crear, listar y eliminar proyectos; gestionar las tareas de cada proyecto.
 - Crear, consultar, editar, eliminar y cambiar el estado de tareas.
 - Buscar tareas por título y consultar contadores del proyecto seleccionado en la interfaz.
 - Consultar la documentación OpenAPI configurada en el backend.
 
-La demo crea una sesión anónima temporal con datos ficticios por visitante; cada sesión solo puede acceder a sus proyectos y tareas. La asignación de tareas aparece en el modelo, pero no existe un caso de uso ni endpoint de asignación en el código actual. La API protege las operaciones de la demo mediante tokens y comprobaciones de propiedad.
+La demo crea una sesión anónima temporal vacía por visitante; cada sesión solo puede acceder a sus proyectos y tareas. La asignación de tareas aparece en el modelo, pero no existe un caso de uso ni endpoint de asignación en el código actual. La API protege las operaciones de la demo mediante tokens y comprobaciones de propiedad.
 
 ## Capturas
 

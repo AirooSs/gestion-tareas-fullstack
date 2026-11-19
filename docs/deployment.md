@@ -2,7 +2,7 @@
 
 [Inicio](../README.md) · [Configuración local](getting-started.md)
 
-La aplicación se puede preparar con el backend en Render, el frontend en Vercel y PostgreSQL en Neon. Estos pasos no despliegan ni crean servicios por sí solos. La demo crea una sesión anónima temporal por pestaña. La API exige tokens Bearer y comprueba la propiedad de los recursos. No utiliza cuentas registradas.
+La aplicación se puede preparar con el backend en Render, el frontend en Vercel y PostgreSQL en Neon. Estos pasos no despliegan ni crean servicios por sí solos. La demo crea una sesión anónima temporal vacía por pestaña. El frontend consulta `/health` antes de iniciar la sesión y espera hasta 150 segundos si el backend tarda en responder. El origen del frontend debe estar autorizado también para esta consulta. La API exige tokens Bearer y comprueba la propiedad de los recursos. No utiliza cuentas registradas.
 
 ## Base de datos para la demo
 
