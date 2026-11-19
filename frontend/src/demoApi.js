@@ -1,4 +1,5 @@
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/+$/, '');
+export const HEALTH_URL = `${API_URL}/health`;
 const KEY = 'demo-session';
 let pendingSession;
 
@@ -11,7 +12,7 @@ export async function startSession() {
   }
   if (!pendingSession) {
     pendingSession = (async () => {
-      const response = await fetch(`${API_URL}/api/demo/session`, { method: 'POST', cache: 'no-store' });
+      const response = await fetch(`${API_URL}/api/demo/session`, { method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(20000) });
       if (!response.ok) throw new Error('unavailable');
       const session = await response.json();
       sessionStorage.setItem(KEY, JSON.stringify(session));

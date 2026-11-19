@@ -26,6 +26,11 @@ class DeploymentWebConfigTest {
         assertNull(cors.checkOrigin("https://other.example"));
         assertNotNull(cors.checkHttpMethod(HttpMethod.DELETE));
         assertNull(cors.checkHttpMethod(HttpMethod.TRACE));
+        CorsConfiguration health = registry.configurations().get("/health");
+        assertEquals("https://demo.example", health.checkOrigin("https://demo.example"));
+        assertNull(health.checkOrigin("https://other.example"));
+        assertNotNull(health.checkHttpMethod(HttpMethod.GET));
+        assertNull(health.checkHttpMethod(HttpMethod.POST));
     }
 
     @Test

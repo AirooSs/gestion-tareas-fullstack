@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
-import { apiFetch, startSession, resetSession } from './demoApi';
+import { apiFetch, startSession, resetSession, HEALTH_URL } from './demoApi';
+import { waitForBackend } from './backendHealth';
 import Icono from './components/Icono';
 import Dialogo from './components/Dialogo';
 import ConfirmarEliminarProyecto from './components/ConfirmarEliminarProyecto';
@@ -16,6 +17,7 @@ function App() {
   const [tareas, setTareas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [estadoDemo, setEstadoDemo] = useState('iniciando');
+  const [esperaProlongada, setEsperaProlongada] = useState(false);
   const [limiteDemo, setLimiteDemo] = useState(false);
   const [intentoDemo, setIntentoDemo] = useState(0);
   const [busquedaTarea, setBusquedaTarea] = useState('');
@@ -28,23 +30,6 @@ function App() {
   const botonEliminarRef = useRef(null);
   const selectorRef = useRef(null);
   const sidebarRef = useRef(null);
-
-  const cargarProyectos = () => {
-    apiFetch('/api/proyectos')
-      .then(response => response.json())
-      .then(data => {
-        setProyectos(data);
-        if (data.length > 0) {
-          setProyectoSeleccionado(data[0].id);
-        }
-        setCargando(false);
-      })
-      .catch(error => {
-        console.error('Error al cargar proyectos:', error);
-        if (!['expired', 'stale-session', 'limit'].includes(error.message)) setEstadoDemo('error');
-        setCargando(false);
-      });
-  };
 
   const cargarTareas = (projectId) => {
     if (!projectId) return;
@@ -60,10 +45,32 @@ function App() {
     const limite = () => { if (vigente) setLimiteDemo(true); };
     window.addEventListener('demo-expired', caducada);
     window.addEventListener('demo-limit', limite);
-    startSession().then(() => {
-      if (vigente) { setEstadoDemo('activa'); cargarProyectos(); }
-    }).catch(error => { if (vigente) setEstadoDemo(error.message === 'expired' ? 'caducada' : 'error'); });
-    return () => { vigente = false; window.removeEventListener('demo-expired', caducada); window.removeEventListener('demo-limit', limite); };
+    const controller = new AbortController();
+    const aviso = setTimeout(() => { if (vigente) setEsperaProlongada(true); }, 5000);
+    async function iniciar() {
+      try {
+        await waitForBackend(HEALTH_URL, { signal: controller.signal });
+      } catch (error) {
+        if (vigente && error.name !== 'AbortError') setEstadoDemo(error.message);
+        return;
+      }
+      if (!vigente) return;
+      try {
+        await startSession();
+        if (!vigente) return;
+        const response = await apiFetch('/api/proyectos', { signal: controller.signal });
+        const data = await response.json();
+        if (!vigente) return;
+        setProyectos(data);
+        setProyectoSeleccionado(data[0]?.id || '');
+        setCargando(false);
+        setEstadoDemo('activa');
+      } catch (error) {
+        if (vigente && error.name !== 'AbortError') setEstadoDemo(error.message === 'expired' ? 'caducada' : 'sesion');
+      }
+    }
+    iniciar();
+    return () => { vigente = false; controller.abort(); clearTimeout(aviso); window.removeEventListener('demo-expired', caducada); window.removeEventListener('demo-limit', limite); };
   }, [intentoDemo]);
 
   useEffect(() => {
@@ -189,15 +196,19 @@ function App() {
   const tareasEnProgreso = tareas.filter(t => t.status === 'EN_PROGRESO').length;
   const tareasHechas = tareas.filter(t => t.status === 'HECHO').length;
 
-  if (estadoDemo === 'caducada' || estadoDemo === 'error') {
-    return <div className="loading-shell"><div className="estado-vacio"><p className="estado-vacio-titulo">{estadoDemo === 'caducada' ? 'Tu demo ha caducado' : 'No se ha podido iniciar la demo'}</p><p className="estado-vacio-texto">{estadoDemo === 'caducada' ? 'Puedes empezar de nuevo con datos de ejemplo.' : 'Comprueba la conexión e inténtalo de nuevo.'}</p><button className="boton-primario" onClick={() => { resetSession(); setLimiteDemo(false); setMostrarFormTarea(false); setProyectoAEliminar(null); setBusquedaTarea(''); setProyectos([]); setTareas([]); setProyectoSeleccionado(''); setCargando(true); setEstadoDemo('iniciando'); setIntentoDemo(n => n + 1); }}>Iniciar nueva demo</button></div></div>;
+  if (['caducada', 'error', 'connection', 'server', 'sesion'].includes(estadoDemo)) {
+    const caducada = estadoDemo === 'caducada';
+    const mensajes = {
+      caducada: 'Puedes comenzar una nueva sesión vacía.',
+      connection: 'No se ha podido conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.',
+      server: 'El servidor no está disponible por ahora. Inténtalo de nuevo en unos instantes.',
+      sesion: 'El servidor respondió, pero no se ha podido iniciar o recuperar tu sesión. Inténtalo de nuevo.',
+      error: 'No se han podido cargar los proyectos. Comprueba la conexión e inténtalo de nuevo.',
+    };
+    return <div className="loading-shell"><div className="estado-vacio inicio-panel" role="alert"><p className="estado-vacio-titulo">{caducada ? 'Tu demo ha caducado' : 'No se ha podido iniciar la aplicación'}</p><p className="estado-vacio-texto">{mensajes[estadoDemo]}</p><button className="boton-primario" onClick={() => { if (caducada) resetSession(); setLimiteDemo(false); setMostrarFormTarea(false); setProyectoAEliminar(null); setBusquedaTarea(''); setProyectos([]); setTareas([]); setProyectoSeleccionado(''); setCargando(true); setEsperaProlongada(false); setEstadoDemo('iniciando'); setIntentoDemo(n => n + 1); }}>{caducada ? 'Iniciar nueva demo' : 'Reintentar'}</button></div></div>;
   }
   if (cargando || estadoDemo === 'iniciando') {
-    return (
-      <div className="loading-shell" role="status" aria-label="Cargando proyectos">
-        <div className="spinner" aria-hidden="true"></div>
-      </div>
-    );
+    return <div className="loading-shell"><div className="inicio-panel" role="status"><div className="spinner" aria-hidden="true"/><p className="estado-vacio-titulo">Iniciando aplicación...</p>{esperaProlongada && <p className="estado-vacio-texto">El servidor utiliza un alojamiento gratuito. El primer acceso puede tardar hasta un par de minutos. Gracias por tu paciencia.</p>}</div></div>;
   }
 
   return (

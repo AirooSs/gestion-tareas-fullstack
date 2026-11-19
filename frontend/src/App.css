@@ -147,3 +147,7 @@ button:disabled { opacity: .6; cursor: wait; }
 
 .demo-aviso { padding: 12px; margin-bottom: 16px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--superficie); color: var(--texto); font-size: 13px; }
 .demo-aviso button { border: 0; background: transparent; color: var(--principal); font-weight: 600; }
+
+.inicio-panel { width: min(440px, calc(100vw - 40px)); text-align: center; }
+.inicio-panel .spinner { margin: 0 auto 20px; }
+.inicio-panel .estado-vacio-texto { font-size: 14px; }
