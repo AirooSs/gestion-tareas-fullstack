@@ -1,10 +1,9 @@
 ﻿import { useState } from 'react';
 import Icono from './Icono';
 
-function ProyectoForm({ onCrear }) {
+function ProyectoForm({ onCrear, mostrarForm, setMostrarForm }) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [mostrarForm, setMostrarForm] = useState(false);
     const manejarSubmit = (evento) => {
         evento.preventDefault();
         onCrear(name, description);

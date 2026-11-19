@@ -20,6 +20,7 @@ function App() {
   const [intentoDemo, setIntentoDemo] = useState(0);
   const [busquedaTarea, setBusquedaTarea] = useState('');
   const [mostrarFormTarea, setMostrarFormTarea] = useState(false);
+  const [mostrarFormProyecto, setMostrarFormProyecto] = useState(false);
   const [proyectoAEliminar, setProyectoAEliminar] = useState(null);
   const [eliminandoProyecto, setEliminandoProyecto] = useState(false);
   const [errorEliminarProyecto, setErrorEliminarProyecto] = useState('');
@@ -210,7 +211,7 @@ function App() {
           {proyectos.map(proyecto => <button key={proyecto.id} type="button" className={`proyecto-nav-item${proyecto.id === proyectoSeleccionado ? ' activo' : ''}`} aria-current={proyecto.id === proyectoSeleccionado ? 'page' : undefined} onClick={() => setProyectoSeleccionado(proyecto.id)}><span className="proyecto-nav-icono"><Icono nombre="folder" size={16}/></span><span className="proyecto-nav-nombre">{proyecto.name}</span>{proyecto.id === proyectoSeleccionado && <span className="proyecto-nav-indicador"/>}</button>)}
           {proyectos.length === 0 && <p className="sidebar-vacio">Aún no hay proyectos.</p>}
         </nav>
-        <ProyectoForm onCrear={crearProyecto}/>
+        <ProyectoForm onCrear={crearProyecto} mostrarForm={mostrarFormProyecto} setMostrarForm={setMostrarFormProyecto}/>
         <div className="sidebar-footer"><div className="avatar">GT</div><div><strong>Mi espacio</strong><span>Organiza tu día</span></div></div>
       </aside>
       <main className="main-area">
@@ -229,7 +230,7 @@ function App() {
             <section className="seccion-tareas" aria-labelledby="titulo-tareas"><div className="seccion-cabecera"><div><h2 id="titulo-tareas">Tareas <span className="contador-tareas">{totalTareas}</span></h2><p>Gestiona y organiza el trabajo de tu proyecto</p></div><BarraBusqueda valor={busquedaTarea} onCambiar={setBusquedaTarea} placeholder="Buscar tareas..."/></div>
               <TareaLista tareas={tareasFiltradas} busqueda={busquedaTarea} onCambiarEstado={cambiarEstado} onEditar={editarTarea} onEliminar={eliminarTarea} onNueva={() => setMostrarFormTarea(true)}/>
             </section>
-          </> : <div className="estado-vacio estado-sin-proyecto"><div className="vacio-icono"><Icono nombre="folder" size={24}/></div><p className="estado-vacio-titulo">Tu espacio está listo</p><p className="estado-vacio-texto">Crea un proyecto en la barra lateral para empezar a organizar tus tareas.</p></div>}
+          </> : <div className="estado-vacio estado-sin-proyecto"><div className="vacio-icono"><Icono nombre="folder" size={24}/></div><p className="estado-vacio-titulo">Todavía no tienes proyectos</p><p className="estado-vacio-texto">Crea tu primer proyecto y empieza a organizar tus tareas</p><button type="button" className="boton-primario" onClick={() => setMostrarFormProyecto(true)}>Crear primer proyecto</button></div>}
         </div>
       </main>
       {mostrarFormTarea && <Dialogo titulo="Nueva tarea" onCerrar={() => setMostrarFormTarea(false)}><TareaForm onCrear={crearTarea} onCancelar={() => setMostrarFormTarea(false)}/></Dialogo>}
