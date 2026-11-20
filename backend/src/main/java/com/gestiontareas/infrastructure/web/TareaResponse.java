@@ -15,7 +15,8 @@ public record TareaResponse(
     String descripcion,
     String status,
     UUID projectId,
-    UUID assignedTo
+    UUID assignedTo,
+    Integer position
 ) {
     public static TareaResponse from(Task task) {
         return new TareaResponse(
@@ -24,7 +25,8 @@ public record TareaResponse(
             task.getDescription(),
             task.getStatus().name(),
             task.getProjectId().value(),
-            task.getAssignedTo() != null ? task.getAssignedTo().value() : null
+            task.getAssignedTo() != null ? task.getAssignedTo().value() : null,
+            task.getPosition()
         );
     }
 }

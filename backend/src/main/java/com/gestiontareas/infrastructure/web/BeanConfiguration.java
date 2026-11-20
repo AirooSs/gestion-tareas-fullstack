@@ -6,6 +6,7 @@ import com.gestiontareas.application.service.CrearTareaService;
 import com.gestiontareas.application.service.CrearUsuarioService;
 import com.gestiontareas.application.service.EditarTareaService;
 import com.gestiontareas.application.service.EliminarTareaService;
+import com.gestiontareas.application.service.TaskOrderingService;
 import com.gestiontareas.application.service.ListarProyectosPorUsuarioService;
 import com.gestiontareas.application.service.ListarTareasPorProyectoService;
 import com.gestiontareas.application.service.ObtenerTareaService;
@@ -23,6 +24,8 @@ import com.gestiontareas.domain.port.in.ObtenerUsuarioUseCase;
 import com.gestiontareas.domain.port.out.ProjectRepository;
 import com.gestiontareas.domain.port.out.TaskRepository;
 import com.gestiontareas.domain.port.out.UserRepository;
+import com.gestiontareas.domain.port.in.TaskOrderingUseCase;
+import com.gestiontareas.domain.port.out.BoardVersionRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import com.gestiontareas.application.service.EliminarProyectoService;
@@ -34,6 +37,11 @@ import com.gestiontareas.domain.port.in.EliminarProyectoUseCase;
 
 @Configuration
 public class BeanConfiguration {
+
+    @Bean
+    public TaskOrderingUseCase taskOrderingUseCase(TaskRepository tasks, BoardVersionRepository versions) {
+        return new TaskOrderingService(tasks, versions);
+    }
 
     @Bean
     public CrearTareaUseCase crearTareaUseCase(TaskRepository taskRepository) {

@@ -21,5 +21,6 @@ public class TaskController {
     @GetMapping("/proyecto/{id}") public List<TareaResponse> list(@AuthenticationPrincipal UUID session, @PathVariable UUID id) { return demo.tasks(session,id).stream().map(TareaResponse::from).toList(); }
     @PutMapping("/{id}") public TareaResponse edit(@AuthenticationPrincipal UUID session, @PathVariable UUID id, @Valid @RequestBody EditarTareaRequest request) { return TareaResponse.from(demo.edit(session,id,request.titulo(),request.descripcion())); }
     @PatchMapping("/{id}/estado") public TareaResponse status(@AuthenticationPrincipal UUID session, @PathVariable UUID id, @Valid @RequestBody ActualizarEstadoRequest request) { return TareaResponse.from(demo.status(session,id,request.estado())); }
+    @PatchMapping("/{id}/posicion") public TaskBoardResponse move(@AuthenticationPrincipal UUID session, @PathVariable UUID id, @Valid @RequestBody MoveTaskRequest request) { return TaskBoardResponse.from(demo.move(session,id,request.estado(),request.antesDeId(),request.version())); }
     @DeleteMapping("/{id}") public ResponseEntity<Void> delete(@AuthenticationPrincipal UUID session, @PathVariable UUID id) { demo.deleteTask(session,id); return ResponseEntity.noContent().build(); }
 }

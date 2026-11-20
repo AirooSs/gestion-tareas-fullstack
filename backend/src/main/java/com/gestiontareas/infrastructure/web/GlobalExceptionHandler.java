@@ -20,6 +20,11 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(com.gestiontareas.domain.exception.BoardConflictException.class)
+    public ResponseEntity<Map<String, String>> handleBoardConflict(com.gestiontareas.domain.exception.BoardConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("mensaje", ex.getMessage()));
+    }
+
     private static final String TIMESTAMP = "timestamp";
     private static final String STATUS = "status";
     private static final String ERROR = "error";

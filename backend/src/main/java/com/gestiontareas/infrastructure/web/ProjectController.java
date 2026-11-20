@@ -18,6 +18,7 @@ public class ProjectController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ProyectoResponse.from(demo.createProject(session,request.name(),request.description())));
     }
     @GetMapping public List<ProyectoResponse> list(@AuthenticationPrincipal UUID session) { return demo.projects(session).stream().map(ProyectoResponse::from).toList(); }
+    @GetMapping("/{projectId}/tablero") public TaskBoardResponse board(@AuthenticationPrincipal UUID session, @PathVariable UUID projectId) { return TaskBoardResponse.from(demo.board(session, projectId)); }
     @DeleteMapping("/{id}") public ResponseEntity<Void> delete(@AuthenticationPrincipal UUID session, @PathVariable UUID id) {
         demo.deleteProject(session,id); return ResponseEntity.noContent().build();
     }

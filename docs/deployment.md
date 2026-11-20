@@ -42,6 +42,8 @@ La CSP del frontend está en `frontend/vercel.json`; su `connect-src` permite el
 
 Las migraciones Flyway están deshabilitadas por defecto (`FLYWAY_ENABLED=false`). En una base de datos nueva y aislada se puede habilitar `FLYWAY_ENABLED=true`; para una base existente sin historial de Flyway hay que revisar el esquema y preparar el baseline manualmente antes de habilitarlas. No ejecutar migraciones en producción sin autorización. La base aislada debe estar preparada antes de arrancar el perfil `prod`.
 
+La migración de expansión `V3` añade la posición de tareas y la versión del tablero sin impedir inserciones del backend antiguo. Debe probarse en una base aislada y aplicarse antes de arrancar el backend nuevo: `ddl-auto=validate` no creará las columnas. Mientras haya instancias antiguas escribiendo, pueden aparecer posiciones nulas o repetidas y cambios sin incremento de versión; no deben darse por garantizadas la unicidad ni la detección de conflictos hasta retirar esas instancias y completar una fase posterior de normalización y restricciones. No activar migraciones automáticas en producción para esta transición.
+
 Variables opcionales del backend: `DEMO_SESSION_HOURS` (24), `DEMO_MAX_SESSIONS` (1000), `DEMO_MAX_PROJECTS` (5), `DEMO_MAX_TASKS` (25), `DEMO_RATE_PER_MINUTE` (120) y `DEMO_SESSION_RATE_PER_MINUTE` (5). La limpieza se configura con las propiedades `demo.cleanup-interval-ms` y `demo.cleanup-initial-delay-ms`.
 
 Render Free puede suspender servicios inactivos y tardar en reanudarlos; consulta sus límites vigentes antes de publicar. No se requiere ni se configura ningún plan de pago en estos pasos.

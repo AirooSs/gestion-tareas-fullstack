@@ -23,7 +23,8 @@ public class TaskMapper {
             task.getDescription(),
             task.getStatus().name(),
             task.getProjectId().value(),
-            task.getAssignedTo() != null ? task.getAssignedTo().value() : null
+            task.getAssignedTo() != null ? task.getAssignedTo().value() : null,
+            task.getPosition()
         );
     }
     
@@ -37,6 +38,7 @@ public class TaskMapper {
         );
 
         task.cambiarEstado(TaskStatus.valueOf(entity.getStatus()));
+        task.cambiarPosicion(entity.getPosition());
 
         if (entity.getAssignedTo() != null) {
             task.asignarA(UserId.of(entity.getAssignedTo()));

@@ -49,4 +49,6 @@ public class TaskEntity {
 	@Column(name = "assigned_to", columnDefinition = "uuid")
 	private UUID assignedTo;
 
+	private Integer position;
+
 }

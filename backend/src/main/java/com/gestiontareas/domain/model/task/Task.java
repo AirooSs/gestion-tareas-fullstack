@@ -18,6 +18,7 @@ public class Task {
     private TaskStatus status;
     private final ProjectId projectId;
     private UserId assignedTo;
+    private Integer position;
 
     public Task(TaskId id, String title, String description, ProjectId projectId) {
         this.id = id;
@@ -31,6 +32,11 @@ public class Task {
     /** Cambia el estado de la tarea */
     public void cambiarEstado(TaskStatus nuevoEstado) {
         this.status = nuevoEstado;
+    }
+
+    public void cambiarPosicion(Integer position) {
+        if (position != null && position < 0) throw new IllegalArgumentException("La posición no puede ser negativa");
+        this.position = position;
     }
 
     /** Asigna la tarea a un usuario */
@@ -50,4 +56,5 @@ public class Task {
     public TaskStatus getStatus() { return status; }
     public ProjectId getProjectId() { return projectId; }
     public UserId getAssignedTo() { return assignedTo; }
+    public Integer getPosition() { return position; }
 }
