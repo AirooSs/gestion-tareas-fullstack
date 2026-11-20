@@ -2,7 +2,7 @@
 
 [Inicio](../README.md) · [Configuración local](getting-started.md)
 
-La aplicación se puede preparar con el backend en Render, el frontend en Vercel y PostgreSQL en Neon. Estos pasos no despliegan ni crean servicios por sí solos. La demo crea una sesión anónima temporal vacía por pestaña. El frontend consulta `/health` antes de iniciar la sesión y espera hasta 150 segundos si el backend tarda en responder. El origen del frontend debe estar autorizado también para esta consulta. La API exige tokens Bearer y comprueba la propiedad de los recursos. No utiliza cuentas registradas.
+La aplicación se puede preparar con el backend en Render, el frontend en Vercel y PostgreSQL en Neon. Estos pasos no despliegan ni crean servicios por sí solos. La demo crea una sesión anónima temporal vacía por pestaña. El frontend consulta `/service-status` antes de iniciar la sesión durante un máximo de 120 segundos, con un límite de intentos y una salida más rápida ante fallos repetidos de red. La API exige tokens Bearer y comprueba la propiedad de los recursos. No utiliza cuentas registradas.
 
 ## Base de datos para la demo
 
@@ -24,11 +24,11 @@ Crea un **Web Service Docker** con el directorio raíz `backend`, el archivo `Do
 
 El perfil `prod` verifica TLS y el esquema existente en Neon (`ddl-auto=validate`); no crea ni modifica tablas. El archivo `.dockerignore` excluye variables de entorno, compilaciones y archivos locales del contexto de imagen. La imagen usa Java 21, un usuario sin privilegios y limita la memoria del heap al 50 % del límite disponible, además de limitar metaspace y caché de código. Estas opciones dejan espacio para memoria nativa, aunque el consumo real depende de la carga y debe vigilarse.
 
-`GET /health` devuelve `{"status":"UP"}` mientras la aplicación responde. No consulta la base de datos: una respuesta correcta no garantiza que Neon esté disponible.
+`GET /health` y `GET /service-status` devuelven `{"status":"UP"}` mientras la aplicación responde, sin crear sesiones. No consultan la base de datos: una respuesta correcta no garantiza que Neon esté disponible. Mantén `/health` como comprobación de Render y despliega el backend con `/service-status` antes del frontend que lo utiliza.
 
 ## Frontend en Vercel
 
-Importa el repositorio con `frontend` como directorio raíz y el preset Vite. El comando de compilación es `npm run build` y el directorio de salida es `dist`. Configura en Vercel la variable de compilación `VITE_API_URL` con el origen HTTPS público del backend de Render, sin `/api`: `https://gestion-tareas-backend-en0q.onrender.com`. Es pública en el código distribuido al navegador: nunca incluyas contraseñas ni otras credenciales. Tras cambiarla, vuelve a desplegar el frontend. En desarrollo, si no se define, se usa `http://localhost:8080`.
+Importa el repositorio con `frontend` como directorio raíz y el preset Vite. El comando de compilación es `npm run build` y el directorio de salida es `dist`. Configura en Vercel `VITE_API_URL` con el origen HTTPS público del backend de Render, sin `/api`: `https://gestion-tareas-backend-en0q.onrender.com`. Es pública en el código distribuido al navegador: nunca incluyas contraseñas ni otras credenciales. Tras cambiarla, vuelve a desplegar el frontend. En desarrollo, si no se define, se usa `http://localhost:8080`.
 
 Incluye el origen concreto de Vercel en `CORS_ALLOWED_ORIGINS`; si utilizas previsualizaciones con dominios distintos, autoriza explícitamente cada origen que deba funcionar. CORS restringe lecturas desde navegadores y no es un mecanismo de autenticación.
 
@@ -38,7 +38,7 @@ El token aleatorio se almacena como hash en PostgreSQL y en `sessionStorage` del
 
 El limitador en memoria restringe peticiones por dirección remota y sesión, y establece una cuota más estricta para crear sesiones; no es distribuido y se reinicia con la instancia. Detrás de proxies varios usuarios pueden compartir una dirección y sufrir limitaciones comunes. No confíes en cabeceras de IP del cliente sin configurar proxies de confianza. Los límites reducen el abuso, pero no evitan ataques distribuidos ni agotan el riesgo de costes o indisponibilidad. Usa datos ficticios, una base Neon aislada y monitoriza el uso.
 
-La CSP del frontend está en `frontend/vercel.json`; su `connect-src` permite únicamente el origen exacto del backend en Render. Si cambia la URL de la API, actualiza tanto la CSP como `VITE_API_URL`. El token en `sessionStorage` puede ser robado si se ejecuta JavaScript malicioso en la página. CORS no protege contra llamadas directas.
+La CSP del frontend está en `frontend/vercel.json`; su `connect-src` permite el origen exacto del backend en Render. Si cambia la URL de la API, actualiza tanto la CSP como `VITE_API_URL`. El token en `sessionStorage` puede ser robado si se ejecuta JavaScript malicioso en la página. CORS no protege contra llamadas directas.
 
 Las migraciones Flyway están deshabilitadas por defecto (`FLYWAY_ENABLED=false`). En una base de datos nueva y aislada se puede habilitar `FLYWAY_ENABLED=true`; para una base existente sin historial de Flyway hay que revisar el esquema y preparar el baseline manualmente antes de habilitarlas. No ejecutar migraciones en producción sin autorización. La base aislada debe estar preparada antes de arrancar el perfil `prod`.
 

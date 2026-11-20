@@ -2,7 +2,7 @@
 
 [Inicio](../README.md) · [Modelo de datos](data-model.md)
 
-`POST /api/demo/session` crea una sesión anónima y devuelve `token` y `expiresAt`. El token se entrega una sola vez y debe enviarse en `Authorization: Bearer <token>` para las rutas de proyectos y tareas. No se aceptan cookies como credenciales. `GET /health` es público. Las rutas de usuarios y la interfaz OpenAPI no están disponibles en el modo demo.
+`POST /api/demo/session` crea una sesión anónima y devuelve `token` y `expiresAt`. El token se entrega una sola vez y debe enviarse en `Authorization: Bearer <token>` para las rutas de proyectos y tareas. No se aceptan cookies como credenciales. `GET /health` y `GET /service-status` son públicos, no crean sesiones y devuelven el mismo estado. Las rutas de usuarios y la interfaz OpenAPI no están disponibles en el modo demo.
 
 | Método y ruta | Cuerpo | Resultado |
 |---|---|---|
