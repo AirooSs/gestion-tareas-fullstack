@@ -23,6 +23,16 @@ class DemoSecurityIntegrationTest {
  String session() throws Exception {var r=req("POST","/api/demo/session",null,null);assertEquals(200,r.statusCode(),r.body());return JsonPath.read(r.body(),"$.token");}
  String project(String t) throws Exception {var r=req("POST","/api/proyectos",t,"{\"name\":\"Project\"}");assertEquals(201,r.statusCode());return JsonPath.read(r.body(),"$.id");}
  String task(String t,String p) throws Exception {var r=req("POST","/api/tareas",t,"{\"titulo\":\"Task\",\"projectId\":\""+p+"\"}");assertEquals(201,r.statusCode());return JsonPath.read(r.body(),"$.id");}
+ @Test void statusEndpointsArePublicAndDoNotCreateSessions() throws Exception {
+  int before=jdbc.queryForObject("select count(*) from demo_sessions",Integer.class);
+  for (String path : new String[]{"/health", "/service-status"}) {
+   var response=req("GET",path,null,null);
+   assertEquals(200,response.statusCode()); assertEquals("UP",JsonPath.read(response.body(),"$.status"));
+  }
+  assertEquals(before,jdbc.queryForObject("select count(*) from demo_sessions",Integer.class));
+  assertEquals(401,req("POST","/service-status",null,null).statusCode());
+  assertEquals(401,req("GET","/api/proyectos",null,null).statusCode());
+ }
  @Test void isolationAndAuthentication() throws Exception {
   assertEquals(401,req("GET","/api/proyectos",null,null).statusCode()); assertEquals(401,req("GET","/api/proyectos","invalid",null).statusCode());
   String a=session(),b=session();

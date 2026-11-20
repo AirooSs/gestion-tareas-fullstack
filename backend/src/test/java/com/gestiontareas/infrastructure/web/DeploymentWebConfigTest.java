@@ -26,11 +26,13 @@ class DeploymentWebConfigTest {
         assertNull(cors.checkOrigin("https://other.example"));
         assertNotNull(cors.checkHttpMethod(HttpMethod.DELETE));
         assertNull(cors.checkHttpMethod(HttpMethod.TRACE));
-        CorsConfiguration health = registry.configurations().get("/health");
-        assertEquals("https://demo.example", health.checkOrigin("https://demo.example"));
-        assertNull(health.checkOrigin("https://other.example"));
-        assertNotNull(health.checkHttpMethod(HttpMethod.GET));
-        assertNull(health.checkHttpMethod(HttpMethod.POST));
+        for (String path : new String[]{"/health", "/service-status"}) {
+            CorsConfiguration health = registry.configurations().get(path);
+            assertEquals("https://demo.example", health.checkOrigin("https://demo.example"));
+            assertNull(health.checkOrigin("https://other.example"));
+            assertNotNull(health.checkHttpMethod(HttpMethod.GET));
+            assertNull(health.checkHttpMethod(HttpMethod.POST));
+        }
     }
 
     @Test
@@ -42,9 +44,11 @@ class DeploymentWebConfigTest {
 
     @Test
     void healthEndpointReturnsMinimalStatus() throws Exception {
-        MockMvcBuilders.standaloneSetup(new HealthController()).build()
-                .perform(get("/health"))
+        var mvc = MockMvcBuilders.standaloneSetup(new HealthController()).build();
+        for (String path : new String[]{"/health", "/service-status"}) {
+            mvc.perform(get(path))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("UP"));
+        }
     }
 }

@@ -23,7 +23,7 @@ public class DemoSecurityConfig {
             .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'none'; frame-ancestors 'none'")))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/health").permitAll()
+                .requestMatchers(HttpMethod.GET, "/health", "/service-status").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/demo/session").permitAll()
                 .requestMatchers("/api/usuarios/**").denyAll()
                 .requestMatchers("/api/**").authenticated()
