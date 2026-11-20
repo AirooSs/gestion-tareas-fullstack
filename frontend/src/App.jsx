@@ -58,7 +58,7 @@ function App() {
       try {
         await startSession();
         if (!vigente) return;
-        const response = await apiFetch('/api/proyectos', { signal: controller.signal });
+        const response = await apiFetch('/api/proyectos', { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]) });
         const data = await response.json();
         if (!vigente) return;
         setProyectos(data);
@@ -69,8 +69,9 @@ function App() {
         if (vigente && error.name !== 'AbortError') setEstadoDemo(error.message === 'expired' ? 'caducada' : 'sesion');
       }
     }
-    iniciar();
-    return () => { vigente = false; controller.abort(); clearTimeout(aviso); window.removeEventListener('demo-expired', caducada); window.removeEventListener('demo-limit', limite); };
+    // StrictMode can set up and immediately clean up this effect in development.
+    const inicio = setTimeout(iniciar, 0);
+    return () => { vigente = false; clearTimeout(inicio); controller.abort(); clearTimeout(aviso); window.removeEventListener('demo-expired', caducada); window.removeEventListener('demo-limit', limite); };
   }, [intentoDemo]);
 
   useEffect(() => {
@@ -196,13 +197,14 @@ function App() {
   const tareasEnProgreso = tareas.filter(t => t.status === 'EN_PROGRESO').length;
   const tareasHechas = tareas.filter(t => t.status === 'HECHO').length;
 
-  if (['caducada', 'error', 'connection', 'server', 'sesion'].includes(estadoDemo)) {
+  if (['caducada', 'error', 'connection', 'server', 'timeout', 'sesion'].includes(estadoDemo)) {
     const caducada = estadoDemo === 'caducada';
     const mensajes = {
       caducada: 'Puedes comenzar una nueva sesión vacía.',
-      connection: 'No se ha podido conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.',
-      server: 'El servidor no está disponible por ahora. Inténtalo de nuevo en unos instantes.',
-      sesion: 'El servidor respondió, pero no se ha podido iniciar o recuperar tu sesión. Inténtalo de nuevo.',
+      connection: 'No se ha podido conectar con el servidor. Comprueba tu conexión; una extensión o configuración del navegador también podría estar bloqueando la solicitud. Revisa su configuración para este sitio y vuelve a intentarlo.',
+      server: 'El servidor ha respondido con un error. Inténtalo de nuevo en unos instantes.',
+      timeout: 'El servidor ha tardado demasiado en responder. Puede estar arrancando; vuelve a intentarlo en unos instantes.',
+      sesion: 'No se ha podido iniciar la sesión o cargar los proyectos. Comprueba tu conexión y vuelve a intentarlo.',
       error: 'No se han podido cargar los proyectos. Comprueba la conexión e inténtalo de nuevo.',
     };
     return <div className="loading-shell"><div className="estado-vacio inicio-panel" role="alert"><p className="estado-vacio-titulo">{caducada ? 'Tu demo ha caducado' : 'No se ha podido iniciar la aplicación'}</p><p className="estado-vacio-texto">{mensajes[estadoDemo]}</p><button className="boton-primario" onClick={() => { if (caducada) resetSession(); setLimiteDemo(false); setMostrarFormTarea(false); setProyectoAEliminar(null); setBusquedaTarea(''); setProyectos([]); setTareas([]); setProyectoSeleccionado(''); setCargando(true); setEsperaProlongada(false); setEstadoDemo('iniciando'); setIntentoDemo(n => n + 1); }}>{caducada ? 'Iniciar nueva demo' : 'Reintentar'}</button></div></div>;
