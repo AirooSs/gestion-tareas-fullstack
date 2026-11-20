@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
-import { apiFetch, startSession, resetSession, HEALTH_URL } from './demoApi';
+import { apiFetch, startSession, resetSession, getSessionToken, HEALTH_URL } from './demoApi';
 import { waitForBackend } from './backendHealth';
+import { createTaskLoader } from './taskLoader';
 import Icono from './components/Icono';
 import Dialogo from './components/Dialogo';
 import ConfirmarEliminarProyecto from './components/ConfirmarEliminarProyecto';
 import TareaForm from './components/TareaForm';
-import TareaLista from './components/TareaLista';
+import TableroKanban from './components/TableroKanban';
 import ProyectoForm from './components/ProyectoForm';
 import BarraBusqueda from './components/BarraBusqueda';
 
@@ -14,7 +15,7 @@ import BarraBusqueda from './components/BarraBusqueda';
 function App() {
   const [proyectos, setProyectos] = useState([]);
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState('');
-  const [tareas, setTareas] = useState([]);
+  const [datosTareas, setDatosTareas] = useState({ projectId: '', session: undefined, tasks: [] });
   const [cargando, setCargando] = useState(true);
   const [estadoDemo, setEstadoDemo] = useState('iniciando');
   const [esperaProlongada, setEsperaProlongada] = useState(false);
@@ -31,13 +32,13 @@ function App() {
   const selectorRef = useRef(null);
   const sidebarRef = useRef(null);
 
-  const cargarTareas = (projectId) => {
-    if (!projectId) return;
-    apiFetch(`/api/tareas/proyecto/${projectId}`)
-      .then(response => response.json())
-      .then(data => setTareas(data))
-      .catch(error => console.error('Error al cargar tareas:', error));
-  };
+  const [taskLoader] = useState(() => createTaskLoader({
+    fetchTasks: (projectId, signal) => apiFetch(`/api/tareas/proyecto/${projectId}`, { signal }),
+    getSession: getSessionToken,
+    onTasks: (tasks, projectId, session) => setDatosTareas({ tasks, projectId, session }),
+    onError: error => console.error('Error al cargar tareas:', error),
+  }));
+  const tareas = datosTareas.projectId === proyectoSeleccionado && datosTareas.session === getSessionToken() ? datosTareas.tasks : [];
 
   useEffect(() => {
     let vigente = true;
@@ -75,10 +76,14 @@ function App() {
   }, [intentoDemo]);
 
   useEffect(() => {
-    cargarTareas(proyectoSeleccionado);
-  }, [proyectoSeleccionado]);
+    const session = getSessionToken();
+    taskLoader.select(proyectoSeleccionado, session);
+    taskLoader.load(proyectoSeleccionado, session);
+    return () => taskLoader.select('', undefined);
+  }, [proyectoSeleccionado, intentoDemo, taskLoader]);
 
   const crearTarea = (titulo, descripcion) => {
+    const session = getSessionToken();
     apiFetch(`/api/tareas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -90,7 +95,7 @@ function App() {
     })
       .then(response => response.json())
       .then(() => {
-        cargarTareas(proyectoSeleccionado);
+        taskLoader.load(proyectoSeleccionado, session);
         setMostrarFormTarea(false);
       })
       .catch(error => console.error('Error al crear tarea:', error));
@@ -114,17 +119,19 @@ function App() {
   };
 
   const cambiarEstado = (id, nuevoEstado) => {
+    const session = getSessionToken();
     apiFetch(`/api/tareas/${id}/estado`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ estado: nuevoEstado })
     })
       .then(response => response.json())
-      .then(() => cargarTareas(proyectoSeleccionado))
+      .then(() => taskLoader.load(proyectoSeleccionado, session))
       .catch(error => console.error('Error al cambiar estado:', error));
   };
 
   const editarTarea = (id, nuevoTitulo, nuevaDescripcion) => {
+    const session = getSessionToken();
     apiFetch(`/api/tareas/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -134,15 +141,16 @@ function App() {
       })
     })
       .then(response => response.json())
-      .then(() => cargarTareas(proyectoSeleccionado))
+      .then(() => taskLoader.load(proyectoSeleccionado, session))
       .catch(error => console.error('Error al editar tarea:', error));
   };
 
   const eliminarTarea = (id) => {
+    const session = getSessionToken();
     apiFetch(`/api/tareas/${id}`, {
       method: 'DELETE'
     })
-      .then(() => cargarTareas(proyectoSeleccionado))
+      .then(() => taskLoader.load(proyectoSeleccionado, session))
       .catch(error => console.error('Error al eliminar tarea:', error));
   };
 
@@ -174,7 +182,7 @@ function App() {
       const proyectosActualizados = proyectos.filter(p => p.id !== id);
       setProyectos(proyectosActualizados);
       if (proyectoSeleccionado === id) {
-        setTareas([]);
+        setDatosTareas({ projectId: '', session: undefined, tasks: [] });
         setProyectoSeleccionado(proyectosActualizados.length > 0 ? proyectosActualizados[0].id : '');
       }
       cerrarConfirmacion(true);
@@ -187,9 +195,6 @@ function App() {
     }
   };
 
-  const tareasFiltradas = tareas
-    .filter(t => t.titulo.toLowerCase().includes(busquedaTarea.toLowerCase()))
-    .sort((a, b) => a.titulo.localeCompare(b.titulo));
   const proyectoActual = proyectos.find(p => p.id === proyectoSeleccionado);
 
   const totalTareas = tareas.length;
@@ -207,7 +212,7 @@ function App() {
       sesion: 'No se ha podido iniciar la sesión o cargar los proyectos. Comprueba tu conexión y vuelve a intentarlo.',
       error: 'No se han podido cargar los proyectos. Comprueba la conexión e inténtalo de nuevo.',
     };
-    return <div className="loading-shell"><div className="estado-vacio inicio-panel" role="alert"><p className="estado-vacio-titulo">{caducada ? 'Tu demo ha caducado' : 'No se ha podido iniciar la aplicación'}</p><p className="estado-vacio-texto">{mensajes[estadoDemo]}</p><button className="boton-primario" onClick={() => { if (caducada) resetSession(); setLimiteDemo(false); setMostrarFormTarea(false); setProyectoAEliminar(null); setBusquedaTarea(''); setProyectos([]); setTareas([]); setProyectoSeleccionado(''); setCargando(true); setEsperaProlongada(false); setEstadoDemo('iniciando'); setIntentoDemo(n => n + 1); }}>{caducada ? 'Iniciar nueva demo' : 'Reintentar'}</button></div></div>;
+    return <div className="loading-shell"><div className="estado-vacio inicio-panel" role="alert"><p className="estado-vacio-titulo">{caducada ? 'Tu demo ha caducado' : 'No se ha podido iniciar la aplicación'}</p><p className="estado-vacio-texto">{mensajes[estadoDemo]}</p><button className="boton-primario" onClick={() => { if (caducada) resetSession(); setLimiteDemo(false); setMostrarFormTarea(false); setProyectoAEliminar(null); setBusquedaTarea(''); setProyectos([]); setDatosTareas({ projectId: '', session: undefined, tasks: [] }); setProyectoSeleccionado(''); setCargando(true); setEsperaProlongada(false); setEstadoDemo('iniciando'); setIntentoDemo(n => n + 1); }}>{caducada ? 'Iniciar nueva demo' : 'Reintentar'}</button></div></div>;
   }
   if (cargando || estadoDemo === 'iniciando') {
     return <div className="loading-shell"><div className="inicio-panel" role="status"><div className="spinner" aria-hidden="true"/><p className="estado-vacio-titulo">Iniciando aplicación...</p>{esperaProlongada && <p className="estado-vacio-texto">El servidor utiliza un alojamiento gratuito. El primer acceso puede tardar hasta un par de minutos. Gracias por tu paciencia.</p>}</div></div>;
@@ -241,7 +246,7 @@ function App() {
               <div className="stat-card"><div className="stat-top"><span>Completadas</span><span className="stat-icono verde"><Icono nombre="check"/></span></div><strong>{tareasHechas}</strong><small>Finalizadas</small></div>
             </div>
             <section className="seccion-tareas" aria-labelledby="titulo-tareas"><div className="seccion-cabecera"><div><h2 id="titulo-tareas">Tareas <span className="contador-tareas">{totalTareas}</span></h2><p>Gestiona y organiza el trabajo de tu proyecto</p></div><BarraBusqueda valor={busquedaTarea} onCambiar={setBusquedaTarea} placeholder="Buscar tareas..."/></div>
-              <TareaLista tareas={tareasFiltradas} busqueda={busquedaTarea} onCambiarEstado={cambiarEstado} onEditar={editarTarea} onEliminar={eliminarTarea} onNueva={() => setMostrarFormTarea(true)}/>
+              <TableroKanban tareas={tareas} busqueda={busquedaTarea} onCambiarEstado={cambiarEstado} onEditar={editarTarea} onEliminar={eliminarTarea}/>
             </section>
           </> : <div className="estado-vacio estado-sin-proyecto"><div className="vacio-icono"><Icono nombre="folder" size={24}/></div><p className="estado-vacio-titulo">Todavía no tienes proyectos</p><p className="estado-vacio-texto">Crea tu primer proyecto y empieza a organizar tus tareas</p><button type="button" className="boton-primario" onClick={() => setMostrarFormProyecto(true)}>Crear primer proyecto</button></div>}
         </div>

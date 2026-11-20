@@ -3,6 +3,10 @@ export const HEALTH_URL = `${API_URL}/service-status`;
 const KEY = 'demo-session';
 let pendingSession;
 
+export function getSessionToken() {
+  return JSON.parse(sessionStorage.getItem(KEY) || 'null')?.token;
+}
+
 export async function startSession() {
   const stored = sessionStorage.getItem(KEY);
   if (stored) {

@@ -1,11 +1,6 @@
 ﻿import { useRef, useState } from 'react';
 
-const estados = [
-    ['PENDIENTE', 'Pendiente'],
-    ['EN_PROGRESO', 'En progreso'],
-    ['HECHO', 'Hecho'],
-    ['CANCELADO', 'Cancelado'],
-];
+import { estadosTarea as estados } from '../estadosTarea';
 
 export default function SelectorEstado({ estado, titulo, onCambiar }) {
     const [abierto, setAbierto] = useState(false);
