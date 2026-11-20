@@ -1,6 +1,6 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { JSDOM } from 'jsdom';
+import { JSDOM, VirtualConsole } from 'jsdom';
 import { createServer } from 'vite';
 import React, { act } from 'react';
 
@@ -13,10 +13,35 @@ const tasks = [
 let actions;
 
 before(async () => {
-  dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'http://localhost/' });
+  const virtualConsole = new VirtualConsole();
+  virtualConsole.on('jsdomError', error => { if (error.type !== 'css parsing') throw error; });
+  dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'http://localhost/', virtualConsole });
   globalThis.window = dom.window;
+  dom.window.matchMedia = () => ({ matches: true, addEventListener() {}, removeEventListener() {} });
   globalThis.document = dom.window.document;
+  document.getAnimations = () => [];
+  document.elementFromPoint = () => null;
+  globalThis.Node = dom.window.Node;
+  globalThis.Document = dom.window.Document;
+  globalThis.ShadowRoot = dom.window.ShadowRoot;
+  globalThis.MutationObserver = dom.window.MutationObserver;
+  globalThis.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} takeRecords() { return []; } };
+  globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
+  globalThis.Element = dom.window.Element;
+  dom.window.Element.prototype.getAnimations = () => [];
+  globalThis.HTMLElement = dom.window.HTMLElement;
+  globalThis.getComputedStyle = dom.window.getComputedStyle;
   globalThis.navigator = dom.window.navigator;
+  globalThis.AbortController = dom.window.AbortController;
+  globalThis.AbortSignal = dom.window.AbortSignal;
+  globalThis.AbortSignal.any = signals => {
+    const controller = new AbortController();
+    for (const signal of signals) {
+      if (signal.aborted) controller.abort(signal.reason);
+      else signal.addEventListener('abort', () => controller.abort(signal.reason), { once: true });
+    }
+    return controller.signal;
+  };
   globalThis.sessionStorage = dom.window.sessionStorage;
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   globalThis.requestAnimationFrame = callback => setTimeout(callback, 0);
@@ -75,6 +100,26 @@ test('preserves status selector, editing and delete confirmation', async () => {
   assert.deepEqual(actions.pop(), ['eliminar', '2']);
 });
 
+test('drag handle is keyboard focusable, gives instructions and supports cancellation', async () => {
+  await render('Alfa');
+  const errors = [];
+  const onError = event => { errors.push(event.error); event.preventDefault(); };
+  window.addEventListener('error', onError);
+  const handle = container.querySelector('[aria-label="Mover tarea Alfa"]');
+  handle.focus();
+  assert.equal(document.activeElement, handle);
+  assert.match(document.getElementById(handle.getAttribute('aria-describedby')).textContent, /Escape/);
+  await act(async () => {
+    handle.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: true }));
+    await new Promise(resolve => setTimeout(resolve, 20));
+    handle.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true, cancelable: true }));
+    await new Promise(resolve => setTimeout(resolve, 20));
+  });
+  window.removeEventListener('error', onError);
+  assert.deepEqual(errors, []);
+  assert.deepEqual(actions, []);
+});
+
 test('app keeps the selected project when an old task request finishes and can create a task', async () => {
   const originalFetch = globalThis.fetch;
   let resolveOld, created;
@@ -110,6 +155,37 @@ test('app keeps the selected project when an old task request finishes and can c
     await act(async () => { container.querySelector('dialog form').dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true })); await new Promise(resolve => setTimeout(resolve, 10)); });
     assert.deepEqual(created, { titulo: 'Tarea nueva', descripcion: '', projectId: 'b' });
     assert.equal(container.querySelector('dialog'), null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('selector saves through the API and moves the card after confirmation', async () => {
+  const originalFetch = globalThis.fetch;
+  let status = 'PENDIENTE', patchBody, authorization, finishPatch;
+  const patch = new Promise(resolve => { finishPatch = resolve; });
+  sessionStorage.setItem('demo-session', JSON.stringify({ token: 'session-one', expiresAt: '2099-01-01T00:00:00Z' }));
+  globalThis.fetch = async (url, options = {}) => {
+    const path = new URL(url).pathname;
+    if (path === '/service-status') return new Response('{}');
+    if (path === '/api/proyectos') return new Response(JSON.stringify([{ id: 'p', name: 'Proyecto' }]));
+    if (path === '/api/tareas/proyecto/p') return new Response(JSON.stringify([{ id: 't', titulo: 'Tarea', status }]));
+    if (path === '/api/tareas/t/estado') { patchBody = JSON.parse(options.body); authorization = options.headers.Authorization; await patch; status = patchBody.estado; return new Response(JSON.stringify({ id: 't', titulo: 'Tarea', status })); }
+    throw new Error(`Unexpected request ${path}`);
+  };
+  try {
+    const { default: App } = await vite.ssrLoadModule('/src/App.jsx');
+    await act(() => root.render(null));
+    await act(async () => { root.render(React.createElement(App)); await new Promise(resolve => setTimeout(resolve, 40)); });
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 40)); });
+    await act(() => container.querySelector('[aria-label="Estado de Tarea: Pendiente"]').click());
+    await act(() => [...container.querySelectorAll('[role="menuitemradio"]')].find(el => el.textContent.includes('Hecho')).click());
+    assert.deepEqual(patchBody, { estado: 'HECHO' });
+    assert.equal(authorization, 'Bearer session-one');
+    assert.match(container.textContent, /Guardando cambio/);
+    assert.equal(container.querySelector('[aria-label="Mover tarea Tarea"]').disabled, true);
+    await act(async () => { finishPatch(); await new Promise(resolve => setTimeout(resolve, 30)); });
+    assert.ok(container.querySelector('.kanban-columna.hecho [aria-label="Estado de Tarea: Hecho"]'));
   } finally {
     globalThis.fetch = originalFetch;
   }

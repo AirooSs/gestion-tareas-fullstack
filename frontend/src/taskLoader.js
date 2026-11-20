@@ -15,7 +15,7 @@ export function createTaskLoader({ fetchTasks, getSession, onTasks, onError }) {
   }
 
   async function load(projectId, session) {
-    if (!current || current.projectId !== projectId || current.session !== session || getSession() !== session) return;
+    if (!current || current.projectId !== projectId || current.session !== session || getSession() !== session) return false;
     cancel();
     controller = new AbortController();
     const request = controller;
@@ -25,11 +25,13 @@ export function createTaskLoader({ fetchTasks, getSession, onTasks, onError }) {
       const tasks = await response.json();
       if (!request.signal.aborted && id === sequence && current?.projectId === projectId && current?.session === session && getSession() === session) {
         onTasks(tasks, projectId, session);
+        return true;
       }
     } catch (error) {
       if (!request.signal.aborted && id === sequence && getSession() === session) onError(error);
     }
+    return false;
   }
 
-  return { select, load, cancel };
+  return { select, load, cancel, isCurrent: (projectId, session) => current?.projectId === projectId && current?.session === session && getSession() === session };
 }

@@ -3,6 +3,7 @@ import './App.css';
 import { apiFetch, startSession, resetSession, getSessionToken, HEALTH_URL } from './demoApi';
 import { waitForBackend } from './backendHealth';
 import { createTaskLoader } from './taskLoader';
+import { createStatusSaver } from './statusSaver';
 import Icono from './components/Icono';
 import Dialogo from './components/Dialogo';
 import ConfirmarEliminarProyecto from './components/ConfirmarEliminarProyecto';
@@ -16,6 +17,7 @@ function App() {
   const [proyectos, setProyectos] = useState([]);
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState('');
   const [datosTareas, setDatosTareas] = useState({ projectId: '', session: undefined, tasks: [] });
+  const [estadoGuardado, setEstadoGuardado] = useState({});
   const [cargando, setCargando] = useState(true);
   const [estadoDemo, setEstadoDemo] = useState('iniciando');
   const [esperaProlongada, setEsperaProlongada] = useState(false);
@@ -33,10 +35,33 @@ function App() {
   const sidebarRef = useRef(null);
 
   const [taskLoader] = useState(() => createTaskLoader({
-    fetchTasks: (projectId, signal) => apiFetch(`/api/tareas/proyecto/${projectId}`, { signal }),
+    fetchTasks: (projectId, signal) => apiFetch(`/api/tareas/proyecto/${projectId}`, { signal: AbortSignal.any([signal, AbortSignal.timeout(20000)]) }),
     getSession: getSessionToken,
     onTasks: (tasks, projectId, session) => setDatosTareas({ tasks, projectId, session }),
     onError: error => console.error('Error al cargar tareas:', error),
+  }));
+  const [statusSaver] = useState(() => createStatusSaver({
+    isCurrent: ({ projectId, session }) => taskLoader.isCurrent(projectId, session),
+    save: async ({ taskId }, estado) => {
+      const response = await apiFetch(`/api/tareas/${taskId}/estado`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado }), signal: AbortSignal.timeout(20000),
+      });
+      return response.json();
+    },
+    confirm: async ({ projectId, session, taskId }, task) => {
+      taskLoader.cancel();
+      setDatosTareas(previous => previous.projectId === projectId && previous.session === session && getSessionToken() === session
+        ? { ...previous, tasks: previous.tasks.map(item => item.id === taskId ? task : item) } : previous);
+      await taskLoader.load(projectId, session);
+    },
+    reconcile: ({ projectId, session }) => taskLoader.load(projectId, session),
+    onState: ({ projectId, session, taskId }, value) => setEstadoGuardado(previous => {
+      const key = JSON.stringify([projectId, session, taskId]);
+      const next = { ...previous };
+      if (value) next[key] = value;
+      else delete next[key];
+      return next;
+    }),
   }));
   const tareas = datosTareas.projectId === proyectoSeleccionado && datosTareas.session === getSessionToken() ? datosTareas.tasks : [];
 
@@ -120,15 +145,12 @@ function App() {
 
   const cambiarEstado = (id, nuevoEstado) => {
     const session = getSessionToken();
-    apiFetch(`/api/tareas/${id}/estado`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estado: nuevoEstado })
-    })
-      .then(response => response.json())
-      .then(() => taskLoader.load(proyectoSeleccionado, session))
-      .catch(error => console.error('Error al cambiar estado:', error));
+    const task = tareas.find(item => item.id === id);
+    if (task) statusSaver.change({ projectId: proyectoSeleccionado, session, taskId: id, status: task.status }, nuevoEstado);
   };
+
+  const revisarEstado = id => statusSaver.recheck({ projectId: proyectoSeleccionado, session: getSessionToken(), taskId: id });
+  const estadoDeTarea = id => estadoGuardado[JSON.stringify([proyectoSeleccionado, getSessionToken(), id])];
 
   const editarTarea = (id, nuevoTitulo, nuevaDescripcion) => {
     const session = getSessionToken();
@@ -246,7 +268,7 @@ function App() {
               <div className="stat-card"><div className="stat-top"><span>Completadas</span><span className="stat-icono verde"><Icono nombre="check"/></span></div><strong>{tareasHechas}</strong><small>Finalizadas</small></div>
             </div>
             <section className="seccion-tareas" aria-labelledby="titulo-tareas"><div className="seccion-cabecera"><div><h2 id="titulo-tareas">Tareas <span className="contador-tareas">{totalTareas}</span></h2><p>Gestiona y organiza el trabajo de tu proyecto</p></div><BarraBusqueda valor={busquedaTarea} onCambiar={setBusquedaTarea} placeholder="Buscar tareas..."/></div>
-              <TableroKanban tareas={tareas} busqueda={busquedaTarea} onCambiarEstado={cambiarEstado} onEditar={editarTarea} onEliminar={eliminarTarea}/>
+              <TableroKanban tareas={tareas} busqueda={busquedaTarea} onCambiarEstado={cambiarEstado} onEditar={editarTarea} onEliminar={eliminarTarea} estadoDeTarea={estadoDeTarea} onRevisarEstado={revisarEstado}/>
             </section>
           </> : <div className="estado-vacio estado-sin-proyecto"><div className="vacio-icono"><Icono nombre="folder" size={24}/></div><p className="estado-vacio-titulo">Todavía no tienes proyectos</p><p className="estado-vacio-texto">Crea tu primer proyecto y empieza a organizar tus tareas</p><button type="button" className="boton-primario" onClick={() => setMostrarFormProyecto(true)}>Crear primer proyecto</button></div>}
         </div>

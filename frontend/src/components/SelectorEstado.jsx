@@ -2,7 +2,7 @@
 
 import { estadosTarea as estados } from '../estadosTarea';
 
-export default function SelectorEstado({ estado, titulo, onCambiar }) {
+export default function SelectorEstado({ estado, titulo, onCambiar, disabled = false }) {
     const [abierto, setAbierto] = useState(false);
     const botonRef = useRef(null);
     const opcionesRef = useRef([]);
@@ -28,7 +28,7 @@ export default function SelectorEstado({ estado, titulo, onCambiar }) {
     };
     return (
         <div className="estado-selector" onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) cerrar(); }}>
-            <button ref={botonRef} type="button" className={`estado-selector-boton ${estado.toLowerCase()}`} aria-label={`Estado de ${titulo}: ${estados[indiceActual][1]}`} aria-haspopup="menu" aria-expanded={abierto} onClick={() => abierto ? cerrar() : abrir()} onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); abrir(e.key === 'ArrowDown' ? 0 : estados.length - 1); } }}>
+            <button ref={botonRef} type="button" disabled={disabled} className={`estado-selector-boton ${estado.toLowerCase()}`} aria-label={`Estado de ${titulo}: ${estados[indiceActual][1]}`} aria-haspopup="menu" aria-expanded={abierto} onClick={() => abierto ? cerrar() : abrir()} onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); abrir(e.key === 'ArrowDown' ? 0 : estados.length - 1); } }}>
                 <span className="estado-punto" aria-hidden="true" />{estados[indiceActual][1]}<span className="estado-flecha" aria-hidden="true" />
             </button>
             {abierto && <div className="estado-menu" role="menu" aria-label={`Cambiar estado de ${titulo}`}>

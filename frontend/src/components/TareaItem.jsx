@@ -1,13 +1,16 @@
 import { useState } from 'react';
+import { useDraggable } from '@dnd-kit/react';
 import Icono from './Icono';
 import Dialogo from './Dialogo';
 import SelectorEstado from './SelectorEstado';
 
-function TareaItem({ tarea, onCambiarEstado, onEditar, onEliminar }) {
+function TareaItem({ tarea, onCambiarEstado, onEditar, onEliminar, estadoGuardado, onRevisarEstado }) {
     const [editando, setEditando] = useState(false);
     const [confirmando, setConfirmando] = useState(false);
     const [titulo, setTitulo] = useState(tarea.titulo);
     const [descripcion, setDescripcion] = useState(tarea.descripcion || '');
+    const bloqueada = ['saving', 'checking', 'unknown'].includes(estadoGuardado?.phase);
+    const { ref, handleRef, isDragging } = useDraggable({ id: tarea.id, disabled: bloqueada || editando || confirmando });
     const cancelarEdicion = () => { setTitulo(tarea.titulo); setDescripcion(tarea.descripcion || ''); setEditando(false); };
     if (editando) return (
         <form className="tarea-card tarea-card-editando formulario" onSubmit={(e) => { e.preventDefault(); onEditar(tarea.id, titulo, descripcion); setEditando(false); }}>
@@ -17,10 +20,13 @@ function TareaItem({ tarea, onCambiarEstado, onEditar, onEliminar }) {
         </form>
     );
     return (
-        <article className="tarea-card">
-            <div className="tarea-card-cabecera"><span className={`estado-punto ${tarea.status.toLowerCase()}`} aria-hidden="true"/><h3>{tarea.titulo}</h3><div className="tarea-acciones"><button type="button" className="boton-icono" title="Editar tarea" aria-label={`Editar tarea ${tarea.titulo}`} onClick={() => setEditando(true)}><Icono nombre="edit" size={17}/></button><button type="button" className="boton-icono peligro" title="Eliminar tarea" aria-label={`Eliminar tarea ${tarea.titulo}`} onClick={() => setConfirmando(true)}><Icono nombre="trash" size={17}/></button></div></div>
+        <article ref={ref} className={`tarea-card${isDragging ? ' arrastrando' : ''}`}>
+            <div className="tarea-card-cabecera"><button ref={handleRef} type="button" className="arrastre-tirador" disabled={bloqueada} aria-label={`Mover tarea ${tarea.titulo}`} aria-describedby="instrucciones-arrastre" title="Arrastrar tarea"><Icono nombre="grip" size={17}/></button><span className={`estado-punto ${tarea.status.toLowerCase()}`} aria-hidden="true"/><h3>{tarea.titulo}</h3><div className="tarea-acciones"><button type="button" className="boton-icono" disabled={bloqueada} title="Editar tarea" aria-label={`Editar tarea ${tarea.titulo}`} onClick={() => setEditando(true)}><Icono nombre="edit" size={17}/></button><button type="button" className="boton-icono peligro" disabled={bloqueada} title="Eliminar tarea" aria-label={`Eliminar tarea ${tarea.titulo}`} onClick={() => setConfirmando(true)}><Icono nombre="trash" size={17}/></button></div></div>
             <p className="tarea-descripcion">{tarea.descripcion || 'Sin descripción'}</p>
-            <div className="tarea-pie"><span className="tarea-estado-label">Estado</span><SelectorEstado estado={tarea.status} titulo={tarea.titulo} onCambiar={valor => onCambiarEstado(tarea.id, valor)} /></div>
+            <div className="tarea-pie"><span className="tarea-estado-label">Estado</span><SelectorEstado estado={tarea.status} titulo={tarea.titulo} disabled={bloqueada} onCambiar={valor => onCambiarEstado(tarea.id, valor)} /></div>
+            {estadoGuardado?.phase === 'saving' && <p className="tarea-guardado" role="status">Guardando cambio…</p>}
+            {estadoGuardado?.phase === 'checking' && <p className="tarea-guardado" role="status">Consultando el estado…</p>}
+            {estadoGuardado?.message && <div className="tarea-error" role="alert"><p>{estadoGuardado.message}</p>{estadoGuardado.phase === 'unknown' && <button type="button" className="boton-secundario" onClick={() => onRevisarEstado(tarea.id)}>Comprobar estado</button>}</div>}
             {confirmando && <Dialogo titulo="Eliminar tarea" onCerrar={() => setConfirmando(false)}><p className="dialogo-intro">¿Quieres eliminar la tarea <strong>{tarea.titulo}</strong>? Esta acción no se puede deshacer.</p><div className="form-acciones"><button autoFocus className="boton-secundario" onClick={() => setConfirmando(false)}>Cancelar</button><button className="boton-peligro" onClick={() => { setConfirmando(false); onEliminar(tarea.id); }}>Eliminar tarea</button></div></Dialogo>}
         </article>
     );
