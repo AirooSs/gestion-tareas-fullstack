@@ -18,7 +18,8 @@ Crea un **Web Service Docker** con el directorio raíz `backend`, el archivo `Do
 |---|---|
 | `DATABASE_URL` | URI privada de Neon, incluida la contraseña. Configúrala como secreto en Render; no la incluyas en el repositorio ni en Vercel. |
 | `SPRING_PROFILES_ACTIVE` | `prod`. Es también el valor predeterminado de la imagen. |
-| `CORS_ALLOWED_ORIGINS` | Lista separada por comas de orígenes HTTPS exactos del frontend, por ejemplo `https://demo.example.com`; sin rutas ni barras finales. Si está vacía, `prod` no permite orígenes de navegador. |
+| `CORS_ALLOWED_ORIGINS` | Lista separada por comas de orígenes HTTPS exactos del frontend, por ejemplo `https://demo.example.com`; sin rutas ni barras finales. Si esta lista y los patrones están vacíos, `prod` no permite orígenes de navegador. |
+| `CORS_ALLOWED_ORIGIN_PATTERNS` | Opcional: lista separada por comas de patrones de origen de Spring. Un patrón comprueba la forma del dominio, no la propiedad del proyecto; usa orígenes exactos cuando sea posible. Por defecto está vacía. |
 | `PORT` | Render proporciona el puerto; el backend lo escucha en todas las interfaces. Fuera de Render se usa `8080` por defecto. |
 | `JAVA_TOOL_OPTIONS` | Opcional: sustituye los parámetros de JVM de la imagen solo tras comprobar el consumo. |
 

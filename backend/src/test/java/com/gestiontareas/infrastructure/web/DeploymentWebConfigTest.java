@@ -19,7 +19,7 @@ class DeploymentWebConfigTest {
     @Test
     void allowsOnlyConfiguredOriginsAndMethods() {
         TestRegistry registry = new TestRegistry();
-        new CorsConfig("https://demo.example, https://preview.example").addCorsMappings(registry);
+        new CorsConfig("https://demo.example, https://preview.example", "").addCorsMappings(registry);
         CorsConfiguration cors = registry.configurations().get("/api/**");
         assertEquals("https://demo.example", cors.checkOrigin("https://demo.example"));
         assertEquals("https://preview.example", cors.checkOrigin("https://preview.example"));
@@ -38,8 +38,25 @@ class DeploymentWebConfigTest {
     @Test
     void emptyOriginsDenyBrowserOrigins() {
         TestRegistry registry = new TestRegistry();
-        new CorsConfig("").addCorsMappings(registry);
+        new CorsConfig("", "").addCorsMappings(registry);
         assertNull(registry.configurations().get("/api/**").checkOrigin("https://demo.example"));
+    }
+
+    @Test
+    void allowsExactOriginsAndRestrictedDeploymentPatternAcrossAllMappings() {
+        TestRegistry registry = new TestRegistry();
+        new CorsConfig("http://localhost:5173,https://gestion-tareas-fullstack.vercel.app",
+                "https://gestion-tareas-fullstack-*-francisco-soria.vercel.app").addCorsMappings(registry);
+        String visit = "https://gestion-tareas-fullstack-mu3mussyx-francisco-soria.vercel.app";
+        for (String path : new String[]{"/health", "/service-status", "/api/**"}) {
+            CorsConfiguration cors = registry.configurations().get(path);
+            assertEquals("http://localhost:5173", cors.checkOrigin("http://localhost:5173"));
+            assertEquals("https://gestion-tareas-fullstack.vercel.app", cors.checkOrigin("https://gestion-tareas-fullstack.vercel.app"));
+            assertEquals(visit, cors.checkOrigin(visit));
+            assertNull(cors.checkOrigin("https://other-project-francisco-soria.vercel.app"));
+            assertNull(cors.checkOrigin("https://gestion-tareas-fullstack-mu3mussyx-other.vercel.app"));
+            assertNull(cors.checkOrigin("https://gestion-tareas-fullstack-mu3mussyx-francisco-soria.vercel.app.evil.example"));
+        }
     }
 
     @Test

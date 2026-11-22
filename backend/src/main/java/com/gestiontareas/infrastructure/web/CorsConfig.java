@@ -9,9 +9,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
     private final String[] allowedOrigins;
+    private final String[] allowedOriginPatterns;
 
-    public CorsConfig(@Value("${app.cors.allowed-origins:}") String origins) {
-        this.allowedOrigins = Arrays.stream(origins.split(","))
+    public CorsConfig(@Value("${app.cors.allowed-origins:}") String origins,
+            @Value("${app.cors.allowed-origin-patterns:}") String patterns) {
+        this.allowedOrigins = parseList(origins);
+        this.allowedOriginPatterns = parseList(patterns);
+    }
+
+    private static String[] parseList(String value) {
+        return Arrays.stream(value.split(","))
                 .map(String::trim)
                 .filter(origin -> !origin.isEmpty())
                 .toArray(String[]::new);
@@ -21,12 +28,15 @@ public class CorsConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/health")
             .allowedOrigins(allowedOrigins)
+            .allowedOriginPatterns(allowedOriginPatterns)
             .allowedMethods("GET");
         registry.addMapping("/service-status")
             .allowedOrigins(allowedOrigins)
+            .allowedOriginPatterns(allowedOriginPatterns)
             .allowedMethods("GET");
         registry.addMapping("/api/**")
             .allowedOrigins(allowedOrigins)
+            .allowedOriginPatterns(allowedOriginPatterns)
             .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
             .allowedHeaders("*");
     }
