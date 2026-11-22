@@ -11,6 +11,6 @@ export function agruparTareas(tareas, busqueda = '') {
   for (const tarea of tareas) {
     if (columnas[tarea.status] && tarea.titulo.toLowerCase().includes(filtro)) columnas[tarea.status].push(tarea);
   }
-  for (const lista of Object.values(columnas)) lista.sort((a, b) => a.titulo.localeCompare(b.titulo));
+  for (const lista of Object.values(columnas)) lista.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   return columnas;
 }

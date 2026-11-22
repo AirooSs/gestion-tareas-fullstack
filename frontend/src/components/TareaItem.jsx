@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { useDraggable } from '@dnd-kit/react';
+import { useSortable } from '@dnd-kit/react/sortable';
 import Icono from './Icono';
 import Dialogo from './Dialogo';
 import SelectorEstado from './SelectorEstado';
 
-function TareaItem({ tarea, onCambiarEstado, onEditar, onEliminar, estadoGuardado, onRevisarEstado }) {
+function TareaItem({ tarea, onCambiarEstado, onEditar, onEliminar, estadoGuardado, onRevisarEstado, index = 0, bloqueado = false, arrastreDeshabilitado = false }) {
     const [editando, setEditando] = useState(false);
     const [confirmando, setConfirmando] = useState(false);
     const [titulo, setTitulo] = useState(tarea.titulo);
     const [descripcion, setDescripcion] = useState(tarea.descripcion || '');
-    const bloqueada = ['saving', 'checking', 'unknown'].includes(estadoGuardado?.phase);
-    const { ref, handleRef, isDragging } = useDraggable({ id: tarea.id, disabled: bloqueada || editando || confirmando });
+    const bloqueada = bloqueado || ['saving', 'checking', 'unknown'].includes(estadoGuardado?.phase);
+    const { ref, handleRef, isDragging } = useSortable({ id: tarea.id, index, group: tarea.status, disabled: bloqueada || arrastreDeshabilitado || editando || confirmando });
     const cancelarEdicion = () => { setTitulo(tarea.titulo); setDescripcion(tarea.descripcion || ''); setEditando(false); };
     if (editando) return (
         <form className="tarea-card tarea-card-editando formulario" onSubmit={(e) => { e.preventDefault(); onEditar(tarea.id, titulo, descripcion); setEditando(false); }}>
@@ -21,7 +21,7 @@ function TareaItem({ tarea, onCambiarEstado, onEditar, onEliminar, estadoGuardad
     );
     return (
         <article ref={ref} className={`tarea-card${isDragging ? ' arrastrando' : ''}`}>
-            <div className="tarea-card-cabecera"><button ref={handleRef} type="button" className="arrastre-tirador" disabled={bloqueada} aria-label={`Mover tarea ${tarea.titulo}`} aria-describedby="instrucciones-arrastre" title="Arrastrar tarea"><Icono nombre="grip" size={17}/></button><span className={`estado-punto ${tarea.status.toLowerCase()}`} aria-hidden="true"/><h3>{tarea.titulo}</h3><div className="tarea-acciones"><button type="button" className="boton-icono" disabled={bloqueada} title="Editar tarea" aria-label={`Editar tarea ${tarea.titulo}`} onClick={() => setEditando(true)}><Icono nombre="edit" size={17}/></button><button type="button" className="boton-icono peligro" disabled={bloqueada} title="Eliminar tarea" aria-label={`Eliminar tarea ${tarea.titulo}`} onClick={() => setConfirmando(true)}><Icono nombre="trash" size={17}/></button></div></div>
+            <div className="tarea-card-cabecera"><button ref={handleRef} type="button" data-drag-task-id={tarea.id} className="arrastre-tirador" disabled={bloqueada || arrastreDeshabilitado} aria-label={`Mover tarea ${tarea.titulo}`} aria-describedby="instrucciones-arrastre" title="Arrastrar tarea"><Icono nombre="grip" size={17}/></button><span className={`estado-punto ${tarea.status.toLowerCase()}`} aria-hidden="true"/><h3>{tarea.titulo}</h3><div className="tarea-acciones"><button type="button" className="boton-icono" disabled={bloqueada} title="Editar tarea" aria-label={`Editar tarea ${tarea.titulo}`} onClick={() => setEditando(true)}><Icono nombre="edit" size={17}/></button><button type="button" className="boton-icono peligro" disabled={bloqueada} title="Eliminar tarea" aria-label={`Eliminar tarea ${tarea.titulo}`} onClick={() => setConfirmando(true)}><Icono nombre="trash" size={17}/></button></div></div>
             <p className="tarea-descripcion">{tarea.descripcion || 'Sin descripción'}</p>
             <div className="tarea-pie"><span className="tarea-estado-label">Estado</span><SelectorEstado estado={tarea.status} titulo={tarea.titulo} disabled={bloqueada} onCambiar={valor => onCambiarEstado(tarea.id, valor)} /></div>
             {estadoGuardado?.phase === 'saving' && <p className="tarea-guardado" role="status">Guardando cambio…</p>}

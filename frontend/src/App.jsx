@@ -3,7 +3,7 @@ import './App.css';
 import { apiFetch, startSession, resetSession, getSessionToken, HEALTH_URL } from './demoApi';
 import { waitForBackend } from './backendHealth';
 import { createTaskLoader } from './taskLoader';
-import { createStatusSaver } from './statusSaver';
+import { createBoardSaver } from './boardSaver';
 import Icono from './components/Icono';
 import Dialogo from './components/Dialogo';
 import ConfirmarEliminarProyecto from './components/ConfirmarEliminarProyecto';
@@ -16,8 +16,10 @@ import BarraBusqueda from './components/BarraBusqueda';
 function App() {
   const [proyectos, setProyectos] = useState([]);
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState('');
-  const [datosTareas, setDatosTareas] = useState({ projectId: '', session: undefined, tasks: [] });
+  const [datosTareas, setDatosTareas] = useState({ projectId: '', session: undefined, tasks: [], version: null });
   const [estadoGuardado, setEstadoGuardado] = useState({});
+  const [boardStore] = useState(() => ({ current: null }));
+  const [errorCarga, setErrorCarga] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [estadoDemo, setEstadoDemo] = useState('iniciando');
   const [esperaProlongada, setEsperaProlongada] = useState(false);
@@ -33,30 +35,39 @@ function App() {
   const botonEliminarRef = useRef(null);
   const selectorRef = useRef(null);
   const sidebarRef = useRef(null);
+  const focoMovimiento = useRef(null);
 
   const [taskLoader] = useState(() => createTaskLoader({
-    fetchTasks: (projectId, signal) => apiFetch(`/api/tareas/proyecto/${projectId}`, { signal: AbortSignal.any([signal, AbortSignal.timeout(20000)]) }),
+    fetchTasks: (projectId, signal) => apiFetch(`/api/proyectos/${projectId}/tablero`, { signal: AbortSignal.any([signal, AbortSignal.timeout(20000)]) }),
     getSession: getSessionToken,
-    onTasks: (tasks, projectId, session) => setDatosTareas({ tasks, projectId, session }),
-    onError: error => console.error('Error al cargar tareas:', error),
+    onTasks: (board, projectId, session) => {
+      const data = { tasks: board.tareas, version: board.version, projectId, session };
+      boardStore.current = data;
+      setErrorCarga(null);
+      setDatosTareas(data);
+    },
+    onError: (error, projectId, session) => { console.error('Error al cargar tareas:', error); setErrorCarga({ projectId, session }); },
   }));
-  const [statusSaver] = useState(() => createStatusSaver({
+  const [boardSaver] = useState(() => createBoardSaver({
     isCurrent: ({ projectId, session }) => taskLoader.isCurrent(projectId, session),
-    save: async ({ taskId }, estado) => {
-      const response = await apiFetch(`/api/tareas/${taskId}/estado`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado }), signal: AbortSignal.timeout(20000),
+    save: async ({ taskId, version }, { estado, antesDeId }) => {
+      taskLoader.cancel();
+      const response = await apiFetch(`/api/tareas/${taskId}/posicion`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado, antesDeId, version }), signal: AbortSignal.timeout(20000),
       });
       return response.json();
     },
-    confirm: async ({ projectId, session, taskId }, task) => {
+    confirm: ({ projectId, session }, board) => {
       taskLoader.cancel();
-      setDatosTareas(previous => previous.projectId === projectId && previous.session === session && getSessionToken() === session
-        ? { ...previous, tasks: previous.tasks.map(item => item.id === taskId ? task : item) } : previous);
-      await taskLoader.load(projectId, session);
+      const data = { projectId, session, tasks: board.tareas, version: board.version };
+      boardStore.current = data;
+      setErrorCarga(null);
+      setDatosTareas(data);
     },
     reconcile: ({ projectId, session }) => taskLoader.load(projectId, session),
-    onState: ({ projectId, session, taskId }, value) => setEstadoGuardado(previous => {
-      const key = JSON.stringify([projectId, session, taskId]);
+    onState: ({ projectId, session }, value) => setEstadoGuardado(previous => {
+      const key = JSON.stringify([projectId, session]);
       const next = { ...previous };
       if (value) next[key] = value;
       else delete next[key];
@@ -143,14 +154,26 @@ function App() {
       .catch(error => console.error('Error al crear proyecto:', error));
   };
 
-  const cambiarEstado = (id, nuevoEstado) => {
+  const estadoTablero = estadoGuardado[JSON.stringify([proyectoSeleccionado, getSessionToken()])];
+  const tableroBloqueado = ['saving', 'checking', 'unknown'].includes(estadoTablero?.phase) || datosTareas.projectId !== proyectoSeleccionado || datosTareas.session !== getSessionToken() || datosTareas.version == null;
+  useEffect(() => {
+    const foco = focoMovimiento.current;
+    if (!foco || tableroBloqueado) return;
+    focoMovimiento.current = null;
+    if (foco.projectId !== proyectoSeleccionado || foco.session !== getSessionToken()) return;
+    [...document.querySelectorAll('[data-drag-task-id]')].find(element => element.dataset.dragTaskId === String(foco.id))?.focus();
+  }, [tableroBloqueado, proyectoSeleccionado, datosTareas]);
+  const moverTarea = (id, estado, antesDeId = null) => {
     const session = getSessionToken();
-    const task = tareas.find(item => item.id === id);
-    if (task) statusSaver.change({ projectId: proyectoSeleccionado, session, taskId: id, status: task.status }, nuevoEstado);
+    const board = boardStore.current;
+    if (!board || board.projectId !== proyectoSeleccionado || board.session !== session || board.version == null) return;
+    if (document.activeElement?.dataset?.dragTaskId === String(id)) focoMovimiento.current = { id, projectId: proyectoSeleccionado, session };
+    boardSaver.move({ projectId: proyectoSeleccionado, session, taskId: id, version: board.version }, { estado, antesDeId });
   };
-
-  const revisarEstado = id => statusSaver.recheck({ projectId: proyectoSeleccionado, session: getSessionToken(), taskId: id });
-  const estadoDeTarea = id => estadoGuardado[JSON.stringify([proyectoSeleccionado, getSessionToken(), id])];
+  const cambiarEstado = (id, nuevoEstado) => {
+    if (tareas.find(item => item.id === id)?.status !== nuevoEstado) moverTarea(id, nuevoEstado);
+  };
+  const revisarTablero = () => boardSaver.recheck({ projectId: proyectoSeleccionado, session: getSessionToken() });
 
   const editarTarea = (id, nuevoTitulo, nuevaDescripcion) => {
     const session = getSessionToken();
@@ -204,7 +227,7 @@ function App() {
       const proyectosActualizados = proyectos.filter(p => p.id !== id);
       setProyectos(proyectosActualizados);
       if (proyectoSeleccionado === id) {
-        setDatosTareas({ projectId: '', session: undefined, tasks: [] });
+        setDatosTareas({ projectId: '', session: undefined, tasks: [], version: null });
         setProyectoSeleccionado(proyectosActualizados.length > 0 ? proyectosActualizados[0].id : '');
       }
       cerrarConfirmacion(true);
@@ -234,7 +257,7 @@ function App() {
       sesion: 'No se ha podido iniciar la sesión o cargar los proyectos. Comprueba tu conexión y vuelve a intentarlo.',
       error: 'No se han podido cargar los proyectos. Comprueba la conexión e inténtalo de nuevo.',
     };
-    return <div className="loading-shell"><div className="estado-vacio inicio-panel" role="alert"><p className="estado-vacio-titulo">{caducada ? 'Tu demo ha caducado' : 'No se ha podido iniciar la aplicación'}</p><p className="estado-vacio-texto">{mensajes[estadoDemo]}</p><button className="boton-primario" onClick={() => { if (caducada) resetSession(); setLimiteDemo(false); setMostrarFormTarea(false); setProyectoAEliminar(null); setBusquedaTarea(''); setProyectos([]); setDatosTareas({ projectId: '', session: undefined, tasks: [] }); setProyectoSeleccionado(''); setCargando(true); setEsperaProlongada(false); setEstadoDemo('iniciando'); setIntentoDemo(n => n + 1); }}>{caducada ? 'Iniciar nueva demo' : 'Reintentar'}</button></div></div>;
+    return <div className="loading-shell"><div className="estado-vacio inicio-panel" role="alert"><p className="estado-vacio-titulo">{caducada ? 'Tu demo ha caducado' : 'No se ha podido iniciar la aplicación'}</p><p className="estado-vacio-texto">{mensajes[estadoDemo]}</p><button className="boton-primario" onClick={() => { if (caducada) resetSession(); setLimiteDemo(false); setMostrarFormTarea(false); setProyectoAEliminar(null); setBusquedaTarea(''); setProyectos([]); setDatosTareas({ projectId: '', session: undefined, tasks: [], version: null }); setProyectoSeleccionado(''); setCargando(true); setEsperaProlongada(false); setEstadoDemo('iniciando'); setIntentoDemo(n => n + 1); }}>{caducada ? 'Iniciar nueva demo' : 'Reintentar'}</button></div></div>;
   }
   if (cargando || estadoDemo === 'iniciando') {
     return <div className="loading-shell"><div className="inicio-panel" role="status"><div className="spinner" aria-hidden="true"/><p className="estado-vacio-titulo">Iniciando aplicación...</p>{esperaProlongada && <p className="estado-vacio-texto">El servidor utiliza un alojamiento gratuito. El primer acceso puede tardar hasta un par de minutos. Gracias por tu paciencia.</p>}</div></div>;
@@ -258,7 +281,7 @@ function App() {
         <div className="topbar"><div className="breadcrumb"><Icono nombre="grid" size={15}/><span>Mis proyectos</span><span className="breadcrumb-separador">/</span><strong>{proyectoActual?.name || 'Resumen'}</strong></div><span className="topbar-label">ESPACIO DE TRABAJO</span></div>
         <div className="contenido">
           {limiteDemo && <div className="demo-aviso" role="alert">Se ha alcanzado un límite de la demo. Espera un momento o elimina algún elemento antes de continuar. <button type="button" onClick={() => setLimiteDemo(false)}>Cerrar</button></div>}
-          <div className="pagina-intro"><div><div className="eyebrow"><span className="eyebrow-punto"/> TU ESPACIO DE TRABAJO</div><h1>{proyectoActual?.name || 'Tus proyectos'}</h1><p>{proyectoActual?.description || (proyectoActual ? 'Un espacio para organizar tus ideas y avanzar cada día.' : 'Todo tu trabajo, en un solo lugar.')}</p></div>{proyectoActual && <div className="cabecera-acciones"><button ref={selectorRef} type="button" className="boton-icono peligro proyecto-eliminar" title="Eliminar proyecto" aria-label={`Eliminar proyecto ${proyectoActual.name}`} onClick={e => pedirEliminarProyecto(proyectoActual, e.currentTarget)}><Icono nombre="trash" size={18}/></button><button type="button" className="boton-primario" onClick={() => setMostrarFormTarea(true)}><Icono nombre="plus" size={18}/> Nueva tarea</button></div>}</div>
+          <div className="pagina-intro"><div><div className="eyebrow"><span className="eyebrow-punto"/> TU ESPACIO DE TRABAJO</div><h1>{proyectoActual?.name || 'Tus proyectos'}</h1><p>{proyectoActual?.description || (proyectoActual ? 'Un espacio para organizar tus ideas y avanzar cada día.' : 'Todo tu trabajo, en un solo lugar.')}</p></div>{proyectoActual && <div className="cabecera-acciones"><button ref={selectorRef} type="button" className="boton-icono peligro proyecto-eliminar" title="Eliminar proyecto" aria-label={`Eliminar proyecto ${proyectoActual.name}`} onClick={e => pedirEliminarProyecto(proyectoActual, e.currentTarget)}><Icono nombre="trash" size={18}/></button><button type="button" className="boton-primario" disabled={tableroBloqueado} onClick={() => setMostrarFormTarea(true)}><Icono nombre="plus" size={18}/> Nueva tarea</button></div>}</div>
           {proyectoActual ? <>
             <div className="resumen-cabecera"><div><h2>Resumen</h2><p>Tu progreso de un vistazo</p></div><span>VISTA GENERAL</span></div>
             <div className="stats-grid">
@@ -268,7 +291,9 @@ function App() {
               <div className="stat-card"><div className="stat-top"><span>Completadas</span><span className="stat-icono verde"><Icono nombre="check"/></span></div><strong>{tareasHechas}</strong><small>Finalizadas</small></div>
             </div>
             <section className="seccion-tareas" aria-labelledby="titulo-tareas"><div className="seccion-cabecera"><div><h2 id="titulo-tareas">Tareas <span className="contador-tareas">{totalTareas}</span></h2><p>Gestiona y organiza el trabajo de tu proyecto</p></div><BarraBusqueda valor={busquedaTarea} onCambiar={setBusquedaTarea} placeholder="Buscar tareas..."/></div>
-              <TableroKanban tareas={tareas} busqueda={busquedaTarea} onCambiarEstado={cambiarEstado} onEditar={editarTarea} onEliminar={eliminarTarea} estadoDeTarea={estadoDeTarea} onRevisarEstado={revisarEstado}/>
+              {errorCarga?.projectId === proyectoSeleccionado && errorCarga?.session === getSessionToken() && !estadoTablero && <div className="demo-aviso" role="alert">No se ha podido cargar el tablero. <button type="button" onClick={() => taskLoader.load(proyectoSeleccionado, getSessionToken())}>Reintentar</button></div>}
+              {estadoTablero && <div className="demo-aviso" role={estadoTablero.message ? 'alert' : 'status'}>{estadoTablero.message || (estadoTablero.phase === 'saving' ? 'Guardando cambio...' : 'Consultando el tablero...')}{estadoTablero.phase === 'unknown' && <button type="button" onClick={revisarTablero}>Comprobar tablero</button>}</div>}
+              <TableroKanban key={`${proyectoSeleccionado}-${datosTareas.version}-${estadoTablero?.phase || "idle"}`} tareas={tareas} busqueda={busquedaTarea} onMover={moverTarea} onCambiarEstado={cambiarEstado} onEditar={editarTarea} onEliminar={eliminarTarea} bloqueado={tableroBloqueado}/>
             </section>
           </> : <div className="estado-vacio estado-sin-proyecto"><div className="vacio-icono"><Icono nombre="folder" size={24}/></div><p className="estado-vacio-titulo">Todavía no tienes proyectos</p><p className="estado-vacio-texto">Crea tu primer proyecto y empieza a organizar tus tareas</p><button type="button" className="boton-primario" onClick={() => setMostrarFormProyecto(true)}>Crear primer proyecto</button></div>}
         </div>

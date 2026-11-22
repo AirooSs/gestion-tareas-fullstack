@@ -6,9 +6,9 @@ import React, { act } from 'react';
 
 let vite, TableroKanban, dom, root, container, createRoot;
 const tasks = [
-  { id: '1', titulo: 'Zorro', descripcion: '', status: 'PENDIENTE' },
-  { id: '2', titulo: 'Alfa', descripcion: 'Descripción', status: 'PENDIENTE' },
-  { id: '3', titulo: 'Beta', descripcion: '', status: 'HECHO' },
+  { id: '1', titulo: 'Zorro', descripcion: '', status: 'PENDIENTE', position: 1 },
+  { id: '2', titulo: 'Alfa', descripcion: 'Descripción', status: 'PENDIENTE', position: 0 },
+  { id: '3', titulo: 'Beta', descripcion: '', status: 'HECHO', position: 0 },
 ];
 let actions;
 
@@ -85,6 +85,8 @@ test('renders four columns with sorted tasks, filtered counts and empty columns'
 
 test('preserves status selector, editing and delete confirmation', async () => {
   await render('Alfa');
+  assert.equal(container.querySelector('[aria-label="Mover tarea Alfa"]').disabled, true);
+  assert.equal(container.querySelector('[aria-label="Estado de Alfa: Pendiente"]').disabled, false);
   const click = async element => act(() => element.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })));
   await click(container.querySelector('[aria-label="Estado de Alfa: Pendiente"]'));
   await click([...container.querySelectorAll('[role="menuitemradio"]')].find(el => el.textContent.includes('En progreso')));
@@ -101,7 +103,7 @@ test('preserves status selector, editing and delete confirmation', async () => {
 });
 
 test('drag handle is keyboard focusable, gives instructions and supports cancellation', async () => {
-  await render('Alfa');
+  await render();
   const errors = [];
   const onError = event => { errors.push(event.error); event.preventDefault(); };
   window.addEventListener('error', onError);
@@ -129,8 +131,8 @@ test('app keeps the selected project when an old task request finishes and can c
     const path = new URL(url).pathname;
     if (path === '/service-status') return new Response('{}');
     if (path === '/api/proyectos') return new Response(JSON.stringify([{ id: 'a', name: 'Proyecto A' }, { id: 'b', name: 'Proyecto B' }]));
-    if (path === '/api/tareas/proyecto/a') return oldResponse;
-    if (path === '/api/tareas/proyecto/b') return new Response(JSON.stringify([{ id: 'b1', titulo: 'Tarea B', status: 'HECHO' }]));
+    if (path === '/api/proyectos/a/tablero') return oldResponse;
+    if (path === '/api/proyectos/b/tablero') return new Response(JSON.stringify({ version: 0, tareas: [{ id: 'b1', titulo: 'Tarea B', status: 'HECHO', position: 0 }] }));
     if (path === '/api/tareas' && options.method === 'POST') { created = JSON.parse(options.body); return new Response('{}'); }
     throw new Error(`Unexpected request ${path}`);
   };
@@ -142,7 +144,7 @@ test('app keeps the selected project when an old task request finishes and can c
     assert.ok(projectB);
     await act(async () => { projectB.click(); await new Promise(resolve => setTimeout(resolve, 10)); });
     assert.match(container.textContent, /Tarea B/);
-    await act(async () => { resolveOld(new Response(JSON.stringify([{ id: 'a1', titulo: 'Tarea antigua', status: 'PENDIENTE' }]))); await new Promise(resolve => setTimeout(resolve, 10)); });
+    await act(async () => { resolveOld(new Response(JSON.stringify({ version: 0, tareas: [{ id: 'a1', titulo: 'Tarea antigua', status: 'PENDIENTE', position: 0 }] }))); await new Promise(resolve => setTimeout(resolve, 10)); });
     assert.doesNotMatch(container.textContent, /Tarea antigua/);
     assert.match(container.textContent, /Tarea B/);
     await act(() => [...container.querySelectorAll('button')].find(el => el.textContent.includes('Nueva tarea')).click());
@@ -169,8 +171,8 @@ test('selector saves through the API and moves the card after confirmation', asy
     const path = new URL(url).pathname;
     if (path === '/service-status') return new Response('{}');
     if (path === '/api/proyectos') return new Response(JSON.stringify([{ id: 'p', name: 'Proyecto' }]));
-    if (path === '/api/tareas/proyecto/p') return new Response(JSON.stringify([{ id: 't', titulo: 'Tarea', status }]));
-    if (path === '/api/tareas/t/estado') { patchBody = JSON.parse(options.body); authorization = options.headers.Authorization; await patch; status = patchBody.estado; return new Response(JSON.stringify({ id: 't', titulo: 'Tarea', status })); }
+    if (path === '/api/proyectos/p/tablero') return new Response(JSON.stringify({ version: 4, tareas: [{ id: 't', titulo: 'Tarea', status, position: 0 }] }));
+    if (path === '/api/tareas/t/posicion') { patchBody = JSON.parse(options.body); authorization = options.headers.Authorization; await patch; status = patchBody.estado; return new Response(JSON.stringify({ version: 5, tareas: [{ id: 't', titulo: 'Tarea', status, position: 0 }] })); }
     throw new Error(`Unexpected request ${path}`);
   };
   try {
@@ -180,7 +182,7 @@ test('selector saves through the API and moves the card after confirmation', asy
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 40)); });
     await act(() => container.querySelector('[aria-label="Estado de Tarea: Pendiente"]').click());
     await act(() => [...container.querySelectorAll('[role="menuitemradio"]')].find(el => el.textContent.includes('Hecho')).click());
-    assert.deepEqual(patchBody, { estado: 'HECHO' });
+    assert.deepEqual(patchBody, { estado: 'HECHO', antesDeId: null, version: 4 });
     assert.equal(authorization, 'Bearer session-one');
     assert.match(container.textContent, /Guardando cambio/);
     assert.equal(container.querySelector('[aria-label="Mover tarea Tarea"]').disabled, true);

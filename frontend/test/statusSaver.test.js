@@ -1,19 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createStatusSaver } from '../src/statusSaver.js';
-import { destinoArrastre } from '../src/dragDrop.js';
 
 const task = { id: '1', status: 'PENDIENTE' };
 const context = () => ({ projectId: 'a', session: 'one', taskId: '1', status: 'PENDIENTE' });
-const event = (target, canceled = false) => ({ canceled, operation: { source: { id: '1' }, target: target ? { id: target } : null } });
 const deferred = () => { let resolve, reject; const promise = new Promise((a, b) => { resolve = a; reject = b; }); return { promise, resolve, reject }; };
-
-test('accepts movement to any column including empty columns, and ignores same state or cancellation', () => {
-  assert.deepEqual(destinoArrastre(event('HECHO'), [task]), { id: '1', estado: 'HECHO' });
-  assert.equal(destinoArrastre(event('PENDIENTE'), [task]), null);
-  assert.equal(destinoArrastre(event('HECHO', true), [task]), null);
-  assert.equal(destinoArrastre(event(null), [task]), null);
-});
 
 test('saves once and prevents concurrent writes to the same task', async () => {
   const request = deferred(), states = [], confirmations = [];

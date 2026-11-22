@@ -34,6 +34,6 @@ export async function apiFetch(path, options = {}) {
   if (current?.token !== session?.token) throw new Error('stale-session');
   if (response.status === 401) { window.dispatchEvent(new Event('demo-expired')); throw new Error('expired'); }
   if (response.status === 429) { window.dispatchEvent(new Event('demo-limit')); throw new Error('limit'); }
-  if (!response.ok) throw new Error('request-failed');
+  if (!response.ok) { const error = new Error('request-failed'); error.status = response.status; throw error; }
   return response;
 }

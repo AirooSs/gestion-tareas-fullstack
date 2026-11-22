@@ -28,7 +28,7 @@ export function createTaskLoader({ fetchTasks, getSession, onTasks, onError }) {
         return true;
       }
     } catch (error) {
-      if (!request.signal.aborted && id === sequence && getSession() === session) onError(error);
+      if (!request.signal.aborted && id === sequence && getSession() === session) onError(error, projectId, session);
     }
     return false;
   }
