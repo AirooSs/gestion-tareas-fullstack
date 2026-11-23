@@ -22,7 +22,6 @@ function App() {
   const [errorCarga, setErrorCarga] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [estadoDemo, setEstadoDemo] = useState('iniciando');
-  const [esperaProlongada, setEsperaProlongada] = useState(false);
   const [limiteDemo, setLimiteDemo] = useState(false);
   const [intentoDemo, setIntentoDemo] = useState(0);
   const [busquedaTarea, setBusquedaTarea] = useState('');
@@ -83,7 +82,6 @@ function App() {
     window.addEventListener('demo-expired', caducada);
     window.addEventListener('demo-limit', limite);
     const controller = new AbortController();
-    const aviso = setTimeout(() => { if (vigente) setEsperaProlongada(true); }, 5000);
     async function iniciar() {
       try {
         await waitForBackend(HEALTH_URL, { signal: controller.signal });
@@ -108,7 +106,7 @@ function App() {
     }
     // StrictMode can set up and immediately clean up this effect in development.
     const inicio = setTimeout(iniciar, 0);
-    return () => { vigente = false; clearTimeout(inicio); controller.abort(); clearTimeout(aviso); window.removeEventListener('demo-expired', caducada); window.removeEventListener('demo-limit', limite); };
+    return () => { vigente = false; clearTimeout(inicio); controller.abort(); window.removeEventListener('demo-expired', caducada); window.removeEventListener('demo-limit', limite); };
   }, [intentoDemo]);
 
   useEffect(() => {
@@ -258,10 +256,10 @@ function App() {
       sesion: 'No se ha podido iniciar la sesión o cargar los proyectos. Comprueba tu conexión y vuelve a intentarlo.',
       error: 'No se han podido cargar los proyectos. Comprueba la conexión e inténtalo de nuevo.',
     };
-    return <div className="loading-shell"><div className="estado-vacio inicio-panel" role="alert"><p className="estado-vacio-titulo">{caducada ? 'Tu demo ha caducado' : 'No se ha podido iniciar la aplicación'}</p><p className="estado-vacio-texto">{mensajes[estadoDemo]}</p><button className="boton-primario" onClick={() => { if (caducada) { resetSession(); setMostrarFormTarea(false); setProyectoAEliminar(null); setBusquedaTarea(''); setProyectos([]); setDatosTareas({ projectId: '', session: undefined, tasks: [], version: null }); setProyectoSeleccionado(''); } setLimiteDemo(false); setCargando(true); setEsperaProlongada(false); setEstadoDemo('iniciando'); setIntentoDemo(n => n + 1); }}>{caducada ? 'Iniciar nueva demo' : 'Reintentar'}</button></div></div>;
+    return <div className="loading-shell"><div className="estado-vacio inicio-panel" role="alert"><p className="estado-vacio-titulo">{caducada ? 'Tu demo ha caducado' : 'No se ha podido iniciar la aplicación'}</p><p className="estado-vacio-texto">{mensajes[estadoDemo]}</p><button className="boton-primario" onClick={() => { if (caducada) { resetSession(); setMostrarFormTarea(false); setProyectoAEliminar(null); setBusquedaTarea(''); setProyectos([]); setDatosTareas({ projectId: '', session: undefined, tasks: [], version: null }); setProyectoSeleccionado(''); } setLimiteDemo(false); setCargando(true); setEstadoDemo('iniciando'); setIntentoDemo(n => n + 1); }}>{caducada ? 'Iniciar nueva demo' : 'Reintentar'}</button></div></div>;
   }
   if (cargando || estadoDemo === 'iniciando') {
-    return <div className="loading-shell"><div className="inicio-panel" role="status"><div className="spinner" aria-hidden="true"/><p className="estado-vacio-titulo">Iniciando aplicación...</p>{esperaProlongada && <p className="estado-vacio-texto">Estamos iniciando el servidor. La primera conexión puede tardar alrededor de un minuto. Gracias por tu paciencia.</p>}</div></div>;
+    return <div className="loading-shell"><div className="inicio-panel" role="status"><div className="spinner" aria-hidden="true"/><p className="estado-vacio-titulo">Iniciando aplicación...</p><p className="estado-vacio-texto">Esta demo utiliza servidores gratuitos que pueden estar inactivos. La primera conexión puede tardar alrededor de un minuto mientras se inician. Gracias por tu paciencia.</p></div></div>;
   }
 
   return (
