@@ -22,23 +22,31 @@ test('a cold backend can recover after timeouts without overlapping requests', a
   assert.equal(calls, 3);
 });
 
-test('quick network failures stop after three attempts', async () => {
+test('multiple quick network failures recover automatically', async () => {
   let calls = 0;
-  await assert.rejects(waitForBackend('/service-status', { ...fast, fetchImpl: async () => { calls++; throw new TypeError('Failed to fetch'); } }), /connection/);
-  assert.equal(calls, 3);
+  await waitForBackend('/service-status', { ...fast, fetchImpl: async () => { if (++calls <= 4) throw new TypeError('Failed to fetch'); return { ok: true }; } });
+  assert.equal(calls, 5);
 });
 
-test('HTTP failures exhaust the attempt limit and remain distinguishable', async () => {
+test('temporary HTTP failures exhaust the deadline and remain distinguishable', async () => {
   let calls = 0;
-  await assert.rejects(waitForBackend('/service-status', { ...fast, maxAttempts: 4, fetchImpl: async () => { calls++; return { ok: false, status: 503 }; } }), /server/);
-  assert.equal(calls, 4);
+  await assert.rejects(waitForBackend('/service-status', { ...fast, timeoutMs: 25, fetchImpl: async () => { calls++; return { ok: false, status: 503 }; } }), /server/);
+  assert.ok(calls > 1);
+});
+
+test('permanent HTTP errors are not retried', async () => {
+  for (const status of [400, 401, 403, 404]) {
+    let calls = 0;
+    await assert.rejects(waitForBackend('/service-status', { ...fast, fetchImpl: async () => { calls++; return { ok: false, status }; } }), /permanent/);
+    assert.equal(calls, 1);
+  }
 });
 
 test('retries wait progressively longer', async () => {
   const times = [];
   await waitForBackend('/service-status', { ...fast, initialDelayMs: 15, maxDelayMs: 30, fetchImpl: async () => {
     times.push(Date.now());
-    return { ok: times.length === 3 };
+    return { ok: times.length === 3, status: 503 };
   } });
   assert.ok(times[1] - times[0] >= 10);
   assert.ok(times[2] - times[1] >= 25);
@@ -60,7 +68,7 @@ test('unmount cancellation aborts an in-flight check', async () => {
 test('unmount cancellation stops a scheduled retry', async () => {
   const controller = new AbortController();
   let calls = 0;
-  const pending = waitForBackend('/service-status', { ...fast, initialDelayMs: 100, signal: controller.signal, fetchImpl: async () => { calls++; return { ok: false }; } });
+  const pending = waitForBackend('/service-status', { ...fast, initialDelayMs: 100, signal: controller.signal, fetchImpl: async () => { calls++; return { ok: false, status: 503 }; } });
   await new Promise(resolve => setTimeout(resolve, 10));
   controller.abort();
   await assert.rejects(pending, { name: 'AbortError' });

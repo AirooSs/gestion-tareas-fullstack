@@ -2,7 +2,7 @@
 
 [Inicio](../README.md) · [Configuración local](getting-started.md)
 
-La aplicación se puede preparar con el backend en Render, el frontend en Vercel y PostgreSQL en Neon. Estos pasos no despliegan ni crean servicios por sí solos. La demo crea una sesión anónima temporal vacía por pestaña. El frontend consulta `/service-status` antes de iniciar la sesión durante un máximo de 120 segundos, con un límite de intentos y una salida más rápida ante fallos repetidos de red. La API exige tokens Bearer y comprueba la propiedad de los recursos. No utiliza cuentas registradas.
+La aplicación se puede preparar con el backend en Render, el frontend en Vercel y PostgreSQL en Neon. Estos pasos no despliegan ni crean servicios por sí solos. La demo crea una sesión anónima temporal vacía por pestaña. El frontend consulta `/service-status` antes de iniciar la sesión y reintenta los fallos temporales durante un máximo de 90 segundos. La API exige tokens Bearer y comprueba la propiedad de los recursos. No utiliza cuentas registradas.
 
 ## Base de datos para la demo
 

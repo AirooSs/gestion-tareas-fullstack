@@ -88,7 +88,7 @@ function App() {
       try {
         await waitForBackend(HEALTH_URL, { signal: controller.signal });
       } catch (error) {
-        if (vigente && error.name !== 'AbortError') setEstadoDemo(error.message);
+        if (vigente && error.name !== 'AbortError') setEstadoDemo(['connection', 'timeout', 'server'].includes(error.message) ? error.message : 'permanent');
         return;
       }
       if (!vigente) return;
@@ -99,7 +99,7 @@ function App() {
         const data = await response.json();
         if (!vigente) return;
         setProyectos(data);
-        setProyectoSeleccionado(data[0]?.id || '');
+        setProyectoSeleccionado(actual => data.some(proyecto => proyecto.id === actual) ? actual : (data[0]?.id || ''));
         setCargando(false);
         setEstadoDemo('activa');
       } catch (error) {
@@ -247,20 +247,21 @@ function App() {
   const tareasEnProgreso = tareas.filter(t => t.status === 'EN_PROGRESO').length;
   const tareasHechas = tareas.filter(t => t.status === 'HECHO').length;
 
-  if (['caducada', 'error', 'connection', 'server', 'timeout', 'sesion'].includes(estadoDemo)) {
+  if (['caducada', 'error', 'connection', 'server', 'timeout', 'permanent', 'sesion'].includes(estadoDemo)) {
     const caducada = estadoDemo === 'caducada';
     const mensajes = {
       caducada: 'Puedes comenzar una nueva sesión vacía.',
       connection: 'No se ha podido conectar con el servidor. Comprueba tu conexión; una extensión o configuración del navegador también podría estar bloqueando la solicitud. Revisa su configuración para este sitio y vuelve a intentarlo.',
       server: 'El servidor ha respondido con un error. Inténtalo de nuevo en unos instantes.',
+      permanent: 'El servidor ha rechazado la conexión. Vuelve a intentarlo más tarde.',
       timeout: 'El servidor ha tardado demasiado en responder. Puede estar arrancando; vuelve a intentarlo en unos instantes.',
       sesion: 'No se ha podido iniciar la sesión o cargar los proyectos. Comprueba tu conexión y vuelve a intentarlo.',
       error: 'No se han podido cargar los proyectos. Comprueba la conexión e inténtalo de nuevo.',
     };
-    return <div className="loading-shell"><div className="estado-vacio inicio-panel" role="alert"><p className="estado-vacio-titulo">{caducada ? 'Tu demo ha caducado' : 'No se ha podido iniciar la aplicación'}</p><p className="estado-vacio-texto">{mensajes[estadoDemo]}</p><button className="boton-primario" onClick={() => { if (caducada) resetSession(); setLimiteDemo(false); setMostrarFormTarea(false); setProyectoAEliminar(null); setBusquedaTarea(''); setProyectos([]); setDatosTareas({ projectId: '', session: undefined, tasks: [], version: null }); setProyectoSeleccionado(''); setCargando(true); setEsperaProlongada(false); setEstadoDemo('iniciando'); setIntentoDemo(n => n + 1); }}>{caducada ? 'Iniciar nueva demo' : 'Reintentar'}</button></div></div>;
+    return <div className="loading-shell"><div className="estado-vacio inicio-panel" role="alert"><p className="estado-vacio-titulo">{caducada ? 'Tu demo ha caducado' : 'No se ha podido iniciar la aplicación'}</p><p className="estado-vacio-texto">{mensajes[estadoDemo]}</p><button className="boton-primario" onClick={() => { if (caducada) { resetSession(); setMostrarFormTarea(false); setProyectoAEliminar(null); setBusquedaTarea(''); setProyectos([]); setDatosTareas({ projectId: '', session: undefined, tasks: [], version: null }); setProyectoSeleccionado(''); } setLimiteDemo(false); setCargando(true); setEsperaProlongada(false); setEstadoDemo('iniciando'); setIntentoDemo(n => n + 1); }}>{caducada ? 'Iniciar nueva demo' : 'Reintentar'}</button></div></div>;
   }
   if (cargando || estadoDemo === 'iniciando') {
-    return <div className="loading-shell"><div className="inicio-panel" role="status"><div className="spinner" aria-hidden="true"/><p className="estado-vacio-titulo">Iniciando aplicación...</p>{esperaProlongada && <p className="estado-vacio-texto">El servidor utiliza un alojamiento gratuito. El primer acceso puede tardar hasta un par de minutos. Gracias por tu paciencia.</p>}</div></div>;
+    return <div className="loading-shell"><div className="inicio-panel" role="status"><div className="spinner" aria-hidden="true"/><p className="estado-vacio-titulo">Iniciando aplicación...</p>{esperaProlongada && <p className="estado-vacio-texto">Estamos iniciando el servidor. La primera conexión puede tardar alrededor de un minuto. Gracias por tu paciencia.</p>}</div></div>;
   }
 
   return (

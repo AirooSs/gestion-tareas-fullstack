@@ -10,38 +10,39 @@ function wait(ms, signal) {
 }
 
 export async function waitForBackend(url, {
-  signal, timeoutMs = 120000, requestTimeoutMs = 15000, maxAttempts = 12,
-  maxNetworkFailures = 3, initialDelayMs = 1000, maxDelayMs = 10000, fetchImpl = fetch,
+  signal, timeoutMs = 90000, requestTimeoutMs = 10000,
+  initialDelayMs = 1000, maxDelayMs = 10000, fetchImpl = fetch,
 } = {}) {
   const deadline = Date.now() + timeoutMs;
   let delay = initialDelayMs;
-  let networkFailures = 0;
   let lastFailure = 'connection';
 
-  for (let attempt = 0; attempt < maxAttempts && Date.now() < deadline; attempt++) {
+  while (Date.now() < deadline) {
     if (signal?.aborted) throw aborted();
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal?.addEventListener('abort', abort, { once: true });
     let timedOut = false;
     const timer = setTimeout(() => { timedOut = true; controller.abort(); }, Math.min(requestTimeoutMs, deadline - Date.now()));
+    let response;
     try {
-      const response = await fetchImpl(url, { signal: controller.signal, cache: 'no-store' });
+      response = await fetchImpl(url, { signal: controller.signal, cache: 'no-store' });
       if (signal?.aborted) throw aborted();
-      if (response.ok) return;
-      lastFailure = 'server';
-      networkFailures = 0;
-    } catch {
+    } catch (error) {
       if (signal?.aborted) throw aborted();
+      if (!timedOut && !(error instanceof TypeError)) throw error;
       lastFailure = timedOut ? 'timeout' : 'connection';
-      if (!timedOut) networkFailures++;
-      else networkFailures = 0;
     } finally {
       clearTimeout(timer);
       signal?.removeEventListener('abort', abort);
     }
+    if (response) {
+      if (response.ok) return;
+      if (![408, 429, 500, 502, 503, 504].includes(response.status)) throw new Error('permanent');
+      lastFailure = 'server';
+    }
     const remaining = deadline - Date.now();
-    if (remaining <= 0 || attempt + 1 >= maxAttempts || networkFailures >= maxNetworkFailures) break;
+    if (remaining <= 0) break;
     await wait(Math.min(delay, remaining), signal);
     delay = Math.min(delay * 2, maxDelayMs);
   }

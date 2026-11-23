@@ -122,6 +122,33 @@ test('drag handle is keyboard focusable, gives instructions and supports cancell
   assert.deepEqual(actions, []);
 });
 
+test('startup error offers a manual retry that starts the app without reloading', async () => {
+  const originalFetch = globalThis.fetch;
+  let checks = 0;
+  sessionStorage.setItem('demo-session', JSON.stringify({ token: 'session-one', expiresAt: '2099-01-01T00:00:00Z' }));
+  globalThis.fetch = async url => {
+    const path = new URL(url).pathname;
+    if (path === '/service-status') return ++checks === 1 ? new Response('', { status: 403 }) : new Response('{}');
+    if (path === '/api/proyectos') return new Response('[]');
+    throw new Error(`Unexpected request ${path}`);
+  };
+  try {
+    const { default: App } = await vite.ssrLoadModule('/src/App.jsx');
+    await act(() => root.render(null));
+    await act(async () => { root.render(React.createElement(App)); await new Promise(resolve => setTimeout(resolve, 30)); });
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 30)); });
+    assert.match(container.textContent, /rechazado la conexión/);
+    assert.equal(checks, 1);
+    await act(async () => { [...container.querySelectorAll('button')].find(button => button.textContent === 'Reintentar').click(); await new Promise(resolve => setTimeout(resolve, 30)); });
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 30)); });
+    assert.match(container.textContent, /Todavía no tienes proyectos/);
+    assert.equal(checks, 2);
+  } finally {
+    await act(() => root.render(null));
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('app keeps the selected project when an old task request finishes and can create a task', async () => {
   const originalFetch = globalThis.fetch;
   let resolveOld, created;
